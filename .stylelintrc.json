@@ -27,7 +27,7 @@
       }
     ],
     "block-no-empty": true,
-    "comment-pattern": "(/ .+|stylelint-)",
+    "comment-pattern": "(/ [A-Z].+|stylelint-)",
     "function-no-unknown": null,
     "no-irregular-whitespace": true,
     "function-name-case": "lower",
