@@ -1,0 +1,68 @@
+{
+  "extends": ["stylelint-config-standard-scss"],
+  "rules": {
+    "at-rule-disallowed-list": ["extend", "keyframes", "debug"],
+    "at-rule-no-unknown": [
+      true,
+      {
+        "ignoreAtRules": [
+          "return",
+          "use",
+          "if",
+          "error",
+          "else",
+          "function",
+          "each",
+          "while",
+          "mixin",
+          "include",
+          "for",
+          "forward"
+        ]
+      }
+    ],
+    "at-rule-empty-line-before": [
+      "always",
+      {
+        "ignoreAtRules": ["return", "use", "error", "else", "each", "while", "mixin", "include", "if", "for"]
+      }
+    ],
+    "block-no-empty": true,
+    "comment-pattern": "(/ [A-Z\\W].+|stylelint-)",
+    "function-no-unknown": null,
+    "no-irregular-whitespace": true,
+    "function-name-case": "lower",
+    "scss/at-mixin-pattern": "^[a-z]+([a-z-]+[a-z]+)?$",
+    "scss/at-function-pattern": "^[a-z]+([a-z-]+[a-z]+)?$",
+    "scss/dollar-variable-pattern": ["^[a-z]+([a-zA-Z-]+[a-zA-Z]+)?$", { "ignore": "global" }],
+    "scss/dollar-variable-colon-space-after": "always",
+    "scss/dollar-variable-colon-space-before": "never",
+    "scss/dollar-variable-no-namespaced-assignment": true,
+    "scss/double-slash-comment-inline": "never",
+    "scss/double-slash-comment-whitespace-inside": "always",
+    "scss/no-duplicate-load-rules": true,
+    "scss/no-duplicate-mixins": true,
+    "scss/operator-no-newline-after": true,
+    "scss/operator-no-newline-before": true,
+    "scss/operator-no-unspaced": true,
+    "scss/percent-placeholder-pattern": "^[a-z]+([a-z-]+[a-z]+)?$",
+    "scss/at-mixin-no-risky-nesting-selector": true,
+    "scss/at-extend-no-missing-placeholder": true,
+    "scss/at-each-key-value-single-line": true,
+    "scss/at-else-closing-brace-newline-after": "always-last-in-chain",
+    "scss/at-else-if-parentheses-space-before": "never",
+    "scss/at-function-parentheses-space-before": "never",
+    "scss/at-if-closing-brace-newline-after": "always-last-in-chain",
+    "scss/at-mixin-argumentless-call-parentheses": "always",
+    "scss/at-mixin-parentheses-space-before": "never",
+    "scss/load-no-partial-leading-underscore": true,
+    "scss/at-use-no-redundant-alias": true,
+    "scss/no-global-function-names": true,
+    "scss/comment-no-empty": true,
+    "scss/at-if-closing-brace-space-after": "always-intermediate",
+    "selector-class-pattern": null,
+    "selector-not-notation": "simple",
+    "selector-pseudo-element-colon-notation": "single",
+    "declaration-no-important": [true, { "severity": "warning" }]
+  }
+}
