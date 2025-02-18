@@ -1,0 +1,21 @@
+{
+  "name": "multi-sass",
+  "version": "1.0.0",
+  "description": "Library to output required partials of a sass file",
+  "homepage": "https://github.com/NikoHelle/multi-sass",
+  "license": "MIT",
+  "main": "",
+  "scripts": {
+    "lint": "yarn stylelint \"*.scss\"",
+    "test": "jest --config __tests__/jest.config.js"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "sass": "^1.83.4",
+    "sass-loader": "^16.0.4",
+    "sass-true": "^8.1.0",
+    "stylelint": "^16.14.0",
+    "stylelint-config-standard": "^37.0.0",
+    "stylelint-config-standard-scss": "^14.0.0"
+  }
+}
