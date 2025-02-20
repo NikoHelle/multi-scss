@@ -1,0 +1,468 @@
+@use "sass:list";
+@use "sass:map";
+@use "sass-true" as *;
+@use "../core-funcs" as coreFuncs;
+@use "./test-helpers" as testHelpers;
+@use "../globals";
+
+/// clear globals etc after each test;
+@function after-each() {
+  $void: globals.update-controllers([]);
+  @return false;
+}
+
+@function create-fake-controller($id) {
+  @return ("ruleMap": "fakeRuleMap-#{$id}", "levels": "fakeLevels-#{$id}", "config": "fakeConfig-#{$id}");
+}
+
+@include describe("_globals.scss") {
+  @include it("get-controllers() returns list of controllers") {
+    @include assert-equal(list.length(globals.get-controllers()), 0);
+
+    $global: coreFuncs.init-multi-sass(
+      $block: "myBlock",
+    );
+
+    @include assert-equal(list.length(globals.get-controllers()), 1);
+
+    $global: coreFuncs.init-multi-sass(
+      $block: "myBlock",
+    );
+
+    @include assert-equal(list.length(globals.get-controllers()), 2);
+
+    $global: coreFuncs.end-multi-sass();
+    @include assert-equal(list.length(globals.get-controllers()), 1);
+
+    $global: coreFuncs.end-multi-sass();
+    @include assert-equal(list.length(globals.get-controllers()), 0);
+
+    $global: coreFuncs.end-multi-sass();
+    @include assert-equal(list.length(globals.get-controllers()), 0);
+
+    $void: after-each();
+  }
+
+  @include it("store-multi-sass-controller() creates and stores a new controller and returns it") {
+    $ruleMap: (
+      "id": "testRuleMap1",
+    );
+    $levels: (
+      "id": "testLevels1",
+    );
+    $config: (
+      "id": "testConfig1",
+    );
+    $newController: globals.store-multi-sass-controller($ruleMap, $levels, $config);
+    @include assert-equal(list.length(globals.get-controllers()), 1);
+    @include assert-equal(globals.get-current-controller(), $newController);
+
+    @include assert-equal(globals.get-multi-sass-rules(), $ruleMap);
+    @include assert-equal(globals.get-multi-sass-levels(), $levels);
+    @include assert-equal(globals.get-multi-sass-config(), $config);
+
+    $ruleMap2: (
+      "id": "testRuleMap2",
+    );
+    $levels2: (
+      "id": "testLevels2",
+    );
+    $config2: (
+      "id": "testConfig2",
+    );
+    $newController2: globals.store-multi-sass-controller(
+      $ruleMap: $ruleMap2,
+      $levels: $levels2,
+      $config: $config2,
+    );
+    @include assert-equal(list.length(globals.get-controllers()), 2);
+    @include assert-equal(globals.get-current-controller(), $newController2);
+    @include assert-equal(globals.get-multi-sass-rules(), $ruleMap2);
+    @include assert-equal(globals.get-multi-sass-levels(), $levels2);
+    @include assert-equal(globals.get-multi-sass-config(), $config2);
+
+    $void: after-each();
+  }
+
+  @include it("update-controllers() updates the global list of controllers and returns it") {
+    $ruleMap: (
+      "id": "testRuleMap1",
+    );
+    $levels: (
+      "id": "testLevels1",
+    );
+    $config: (
+      "id": "testConfig1",
+    );
+    $newController: globals.store-multi-sass-controller($ruleMap, $levels, $config);
+    @include assert-equal(list.length(globals.get-controllers()), 1);
+    $fakeController: create-fake-controller(1);
+    $newList: $newController, $fakeController;
+    $updatedList: globals.update-controllers($newList);
+    @include assert-equal(list.length(globals.get-controllers()), 2);
+    @include assert-equal(list.length($updatedList), 2);
+    @include assert-equal(globals.get-current-controller(), $fakeController);
+
+    $emptyList: globals.update-controllers([]);
+    @include assert-equal(list.length(globals.get-controllers()), 0);
+    @include assert-equal(globals.get-current-controller(), null);
+
+    $void: after-each();
+  }
+
+  @include it("add-controller() and remove-current-controller() adds and removes controllers.") {
+    $fakeController1: create-fake-controller(1);
+    $fakeController2: create-fake-controller(2);
+    @include assert-equal(list.length(globals.get-controllers()), 0);
+
+    $controllerList: globals.add-controller($fakeController1);
+    @include assert-equal(list.length(globals.get-controllers()), 1);
+    @include assert-equal(list.length($controllerList), 1);
+    @include assert-equal(globals.get-current-controller(), $fakeController1);
+
+    $controllerList: globals.add-controller($fakeController2);
+    @include assert-equal(list.length(globals.get-controllers()), 2);
+    @include assert-equal(list.length($controllerList), 2);
+    @include assert-equal(globals.get-current-controller(), $fakeController2);
+
+    $controllerList: globals.remove-current-controller();
+    @include assert-equal(list.length(globals.get-controllers()), 1);
+    @include assert-equal(list.length($controllerList), 1);
+    @include assert-equal(globals.get-current-controller(), $fakeController1);
+
+    $controllerList: globals.remove-current-controller();
+    @include assert-equal(list.length(globals.get-controllers()), 0);
+    @include assert-equal(list.length($controllerList), 0);
+    @include assert-equal(globals.get-current-controller(), null);
+
+    $void: after-each();
+  }
+
+  @include it("update-current-controller()  updates data in the current controller. Old is not mutated.") {
+    $fakeController1: create-fake-controller(1);
+    $fakeController2: create-fake-controller(2);
+    $fakeController3: create-fake-controller(3);
+    @include assert-equal(list.length(globals.get-controllers()), 0);
+
+    $controllerList: globals.add-controller($fakeController1);
+    $controllerList: globals.add-controller($fakeController2);
+    $controllerList: globals.add-controller($fakeController3);
+    @include assert-equal(list.length(globals.get-controllers()), 3);
+    @include assert-equal(list.length($controllerList), 3);
+    @include assert-equal(globals.get-current-controller(), $fakeController3);
+
+    $newController: globals.update-current-controller(
+      $ruleMap: "updated-rulemap-4",
+    );
+
+    @include assert-equal(map.get(globals.get-current-controller(), "rules"), "updated-rulemap-4");
+    @include assert-equal(globals.get-current-controller(), $newController);
+    @include assert-unequal(globals.get-current-controller(), $fakeController3);
+    @include assert-equal(list.length(globals.get-controllers()), 3);
+
+    $newController2: globals.update-current-controller(
+      $levels: "updated-levels-4",
+    );
+
+    @include assert-equal(map.get(globals.get-current-controller(), "levels"), "updated-levels-4");
+    @include assert-equal(map.get(globals.get-current-controller(), "rules"), "updated-rulemap-4");
+    @include assert-equal(globals.get-current-controller(), $newController2);
+    @include assert-unequal(globals.get-current-controller(), $newController);
+    @include assert-equal(list.length(globals.get-controllers()), 3);
+
+    $newController3: globals.update-current-controller(
+      $config: "updated-config-4",
+    );
+
+    @include assert-equal(map.get(globals.get-current-controller(), "levels"), "updated-levels-4");
+    @include assert-equal(map.get(globals.get-current-controller(), "rules"), "updated-rulemap-4");
+    @include assert-equal(map.get(globals.get-current-controller(), "config"), "updated-config-4");
+    @include assert-equal(globals.get-current-controller(), $newController3);
+    @include assert-unequal(globals.get-current-controller(), $newController2);
+    @include assert-equal(list.length(globals.get-controllers()), 3);
+
+    $void: after-each();
+  }
+
+  @include it("update-multi-sass-rules() and get-multi-sass-rules() updates and gets rules. Old is not mutated.") {
+    $fakeController1: create-fake-controller(1);
+    $oldRules: map.get($fakeController1, "rules");
+    @include assert-equal(list.length(map.keys(globals.get-multi-sass-rules())), 0);
+
+    $newRules: "new-rules";
+    $controllerList: globals.add-controller($fakeController1);
+    @include assert-equal(globals.get-multi-sass-rules(), $oldRules);
+    @include assert-equal(map.get(globals.get-current-controller(), "rules"), $oldRules);
+
+    $newController: globals.update-multi-sass-rules($newRules);
+
+    @include assert-equal(globals.get-current-controller(), $newController);
+    @include assert-equal(map.get(globals.get-current-controller(), "rules"), $newRules);
+    @include assert-equal(map.get($fakeController1, "rules"), $oldRules);
+    $void: after-each();
+  }
+
+  @include it("get-multi-sass-config() gets config and its helpers gets given config value") {
+    $ruleMap: ();
+    $levels: [];
+    $config: (
+      "blockName": "blockName",
+      "rootSelector": "rootSelector",
+      "blockPrefix": "blockPrefix",
+      "modifierDelimeter": "modifierDelimeter",
+      "elementDelimeter": "elementDelimeter",
+      "alias": (
+        "value": 1,
+      ),
+      "emitContentOnly": "emitContentOnly",
+      "createModifierSelector": "createModifierSelector",
+      "createElementSelector": "createElementSelector",
+    );
+
+    $newController: globals.store-multi-sass-controller($ruleMap, $levels, $config);
+
+    @include assert-equal(globals.get-multi-sass-config(), $config);
+    @include assert-equal(map.get(globals.get-current-controller(), "config"), $config);
+
+    $argsConfig: (
+      "blockName": "blockNameTest",
+      "rootSelector": "rootSelectorTest",
+      "blockPrefix": "blockPrefixTest",
+      "modifierDelimeter": "modifierDelimeterTest",
+      "elementDelimeter": "elementDelimeterTest",
+      "alias": (
+        "value": 2,
+      ),
+      "emitContentOnly": "emitContentOnlyTest",
+      "createModifierSelector": "createModifierSelectorTest",
+      "createElementSelector": "createElementSelectorTest",
+    );
+
+    @include assert-equal(globals.get-block-prefix(), map.get($config, "blockPrefix"));
+    @include assert-equal(globals.get-block-prefix($argsConfig), map.get($argsConfig, "blockPrefix"));
+
+    @include assert-equal(globals.get-block-name(), map.get($config, "blockName"));
+    @include assert-equal(globals.get-block-name($argsConfig), map.get($argsConfig, "blockName"));
+
+    @include assert-equal(globals.get-root-selector(), map.get($config, "rootSelector"));
+    @include assert-equal(globals.get-root-selector($argsConfig), map.get($argsConfig, "rootSelector"));
+
+    @include assert-equal(globals.get-modifier-delimeter(), map.get($config, "modifierDelimeter"));
+    @include assert-equal(globals.get-modifier-delimeter($argsConfig), map.get($argsConfig, "modifierDelimeter"));
+
+    @include assert-equal(globals.get-element-delimeter(), map.get($config, "elementDelimeter"));
+    @include assert-equal(globals.get-element-delimeter($argsConfig), map.get($argsConfig, "elementDelimeter"));
+
+    @include assert-equal(globals.get-alias(), map.get($config, "alias"));
+    @include assert-equal(globals.get-alias($argsConfig), map.get($argsConfig, "alias"));
+
+    @include assert-equal(globals.get-alias-value("value"), 1);
+    @include assert-equal(globals.get-alias-value("value", $argsConfig), 2);
+
+    @include assert-equal(globals.get-modifier-selector-creator(), map.get($config, "createModifierSelector"));
+    @include assert-equal(
+      globals.get-modifier-selector-creator($argsConfig),
+      map.get($argsConfig, "createModifierSelector")
+    );
+
+    @include assert-equal(globals.get-element-selector-creator(), map.get($config, "createElementSelector"));
+    @include assert-equal(
+      globals.get-element-selector-creator($argsConfig),
+      map.get($argsConfig, "createElementSelector")
+    );
+
+    $void: after-each();
+  }
+
+  @include it("emit-content-only-in-root() and emit-content-only-all() return true if config.emitContentOnly matches") {
+    @include assert-equal(
+      globals.emit-content-only-in-root(
+        (
+          "emitContentOnly": globals.$EMIT_CONTENT_ONLY_IN_ROOT,
+        )
+      ),
+      true
+    );
+    @include assert-equal(
+      globals.emit-content-only-in-root(
+        (
+          "emitContentOnly": globals.$EMIT_CONTENT_ONLY_ALL,
+        )
+      ),
+      false
+    );
+    @include assert-equal(
+      globals.emit-content-only-in-root(
+        (
+          "emitContentOnly": null,
+        )
+      ),
+      false
+    );
+
+    @include assert-equal(
+      globals.emit-content-only-all(
+        (
+          "emitContentOnly": globals.$EMIT_CONTENT_ONLY_ALL,
+        )
+      ),
+      true
+    );
+    @include assert-equal(
+      globals.emit-content-only-all(
+        (
+          "emitContentOnly": globals.$EMIT_CONTENT_ONLY_IN_ROOT,
+        )
+      ),
+      false
+    );
+    @include assert-equal(
+      globals.emit-content-only-all(
+        (
+          "emitContentOnly": null,
+        )
+      ),
+      false
+    );
+
+    $void: after-each();
+  }
+
+  @include it(
+    "update-multi-sass-levels() and get-multi-sass-levels() and helpers updates and gets levels. Old is not mutated."
+  ) {
+    $ruleMap: ();
+    $levels: "1" "2" "3";
+    $config: ();
+
+    @include assert-equal(list.length(globals.get-multi-sass-levels()), 0);
+    $newController: globals.store-multi-sass-controller($ruleMap, $levels, $config);
+
+    @include assert-equal(globals.get-multi-sass-levels(), $levels);
+    @include assert-equal(map.get(globals.get-current-controller(), "levels"), $levels);
+
+    $newLevels: "a", "b", "c";
+    $newController: globals.update-multi-sass-levels($newLevels);
+
+    @include assert-equal(globals.get-current-controller(), $newController);
+    @include assert-equal(map.get(globals.get-current-controller(), "levels"), $newLevels);
+
+    $updatedLevels: globals.add-multi-sass-level("d4");
+    @include assert-equal(globals.get-multi-sass-levels(), $updatedLevels);
+    @include assert-equal(map.get(globals.get-current-controller(), "levels"), list.join($newLevels, "d4"));
+
+    @include assert-equal(map.get($newController, "levels"), $newLevels);
+    @include assert-unequal(globals.get-current-controller(), $newController);
+
+    $updatedContollerAfterRemoval: globals.remove-current-multi-sass-level();
+    @include assert-equal(testHelpers.diff-list(globals.get-multi-sass-levels(), $newLevels), []);
+    $updatedContollerAfterRemoval: globals.remove-current-multi-sass-level();
+    $updatedContollerAfterRemoval: globals.remove-current-multi-sass-level();
+    @include assert-equal(testHelpers.diff-list(globals.get-multi-sass-levels(), "1"), []);
+
+    $newList: globals.replace-multi-sass-level("a", 1);
+    @include assert-equal(testHelpers.diff-list(globals.get-multi-sass-levels(), "a"), []);
+
+    $void: after-each();
+  }
+  @include it("replace-multi-sass-level() replaces a level") {
+    $ruleMap: ();
+    $levels: "1" "2" "3";
+    $config: ();
+
+    $newController: globals.store-multi-sass-controller($ruleMap, $levels, $config);
+
+    $newLevels: "a" "b" "c";
+    $list: globals.replace-multi-sass-level("a", 1);
+    $list: globals.replace-multi-sass-level("b", 2);
+    $list: globals.replace-multi-sass-level("c", 3);
+
+    @include assert-equal(globals.get-multi-sass-levels(), $newLevels);
+    @include assert-equal(globals.get-multi-sass-levels(), $list);
+
+    $void: after-each();
+  }
+  @include it("update-current-multi-sass-level() updates current level with new props") {
+    $ruleMap: ();
+    $levels: (
+        "index": 1,
+        name: "one",
+      ),
+      (
+        "index": 2,
+        name: "two",
+      ),
+      (
+        "index": 3,
+        name: "three",
+      );
+    $config: ();
+
+    $newController: globals.store-multi-sass-controller($ruleMap, $levels, $config);
+
+    $newList: globals.update-current-multi-sass-level(
+      (
+        "name": "3.1",
+        index: 31,
+      )
+    );
+    $expectedList: list.set-nth(
+      $levels,
+      3,
+      (
+        "name": "3.1",
+        index: 31,
+      )
+    );
+    @include assert-equal(globals.get-multi-sass-levels(), $expectedList);
+
+    $newList: globals.update-current-multi-sass-level(
+      (
+        "name": "3.2",
+        index: 32,
+      )
+    );
+    $expectedList: list.set-nth(
+      $levels,
+      3,
+      (
+        "name": "3.2",
+        index: 32,
+      )
+    );
+    @include assert-equal(globals.get-multi-sass-levels(), $expectedList);
+
+    $updatedContollerAfterRemoval: globals.remove-current-multi-sass-level();
+    $listWithTwo: globals.get-multi-sass-levels();
+
+    $newList: globals.update-current-multi-sass-level(
+      (
+        "name": "2.1",
+        index: 21,
+      )
+    );
+    $expectedList: list.set-nth(
+      $listWithTwo,
+      2,
+      (
+        "name": "2.1",
+        index: 21,
+      )
+    );
+
+    @include assert-equal(globals.get-multi-sass-levels(), $expectedList);
+
+    // try to updated empty list
+    $void: globals.update-multi-sass-levels([]);
+    $newList: globals.update-current-multi-sass-level(
+      (
+        "name": "any",
+        index: 0,
+      )
+    );
+
+    @include assert-equal(globals.get-multi-sass-levels(), []);
+
+    $void: after-each();
+  }
+}
