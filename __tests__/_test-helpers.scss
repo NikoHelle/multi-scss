@@ -2,6 +2,7 @@
 @use "sass:map";
 @use "sass:list";
 @use "sass:meta";
+@use "sass:math";
 
 /// Small utils to compare maps and lists
 
@@ -31,12 +32,13 @@
 /// Note: tested items are from "expected" so partials can be tested.
 
 @function diff-list($target, $expected, $diffs: []) {
-  $len: list.length($expected);
+  $lenExpected: list.length($expected);
+  $lenTarget: list.length($target);
+  $len: math.min($lenTarget, $lenExpected);
   @if $len > 1 {
-    @for $i from 1 through $len - 1 {
+    @for $i from 1 through $len {
       $value: list.nth($target, $i);
       $expectedValue: list.nth($expected, $i);
-
       @if helpers.is-value-list($expectedValue) {
         @if not helpers.is-value-list($value) {
           $diffs: list.append($diffs, 'expected "#{$i}" to be a list, but got "#{meta.inspect($value)}"');
@@ -49,6 +51,9 @@
         }
       }
     }
+  }
+  @if $lenExpected > $lenTarget {
+    $diffs: list.append($diffs, "expected list is longer #{$lenExpected} than target #{$lenTarget}.");
   }
   @return $diffs;
 }
