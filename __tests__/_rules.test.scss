@@ -1,0 +1,533 @@
+@use "sass-true" as *;
+@use "sass:map";
+@use "sass:meta";
+@use "../globals" as *;
+@use "../rules" as rules;
+@use "../helpers" as helpers;
+@use "./test-helpers" as testHelpers;
+
+@include describe("_rules.scss") {
+  $defaultMap: (
+    "truthy": true,
+    "falsy": false,
+    "nully": null,
+    "stringy": "stringValue",
+    "map-with-mixed-allows": (
+      "mapped-truthy": true,
+      "mapped-falsy": false,
+      "mapped-stringy": "mapped-stringy",
+    ),
+    "map-with-only-disallowed": (
+      "mapped-falsy": false,
+      "mapped-disallowed": false,
+    ),
+  );
+  $defaultMapAsRules: rules.rules-to-map(
+    (
+      "modifiers": $defaultMap,
+    )
+  );
+
+  @include describe("value-to-map") {
+    @include it('when value is boolean "true", only ALL_ALLOWED is true') {
+      $value: true;
+      $result: rules.value-to-map($value);
+      $expectedResult: (
+        $ALL_ALLOWED: true,
+        $ALL_DISALLOWED: false,
+        $HAS_EXPLICIT_TRUE: false,
+      );
+
+      @include assert-equal(testHelpers.diff-map($result, $expectedResult), []);
+    }
+
+    @include it('when value is boolean "false", only ALL_DISALLOWED is true') {
+      $value: false;
+      $result: rules.value-to-map($value);
+      $expectedResult: (
+        $ALL_ALLOWED: false,
+        $ALL_DISALLOWED: true,
+        $HAS_EXPLICIT_TRUE: false,
+      );
+
+      @include assert-equal(testHelpers.diff-map($result, $expectedResult), []);
+    }
+
+    @include it("when value is a string, the returned map has that value:true and HAS_EXPLICIT_TRUE:true") {
+      $value: "stringy";
+      $result: rules.value-to-map($value);
+      $expectedResult: (
+        $HAS_EXPLICIT_TRUE: true,
+        $ALL_ALLOWED: false,
+        $ALL_DISALLOWED: false,
+        "stringy": true,
+      );
+
+      @include assert-equal(testHelpers.diff-map($result, $expectedResult), []);
+    }
+
+    @include it('when one value is boolean "true", the returned map has that value:true and HAS_EXPLICIT_TRUE:true ') {
+      $map: (
+        "name": true,
+      );
+      $result: rules.value-to-map($map);
+      $expectedResult: (
+        "name": true,
+        $HAS_EXPLICIT_TRUE: true,
+        $ALL_DISALLOWED: false,
+        $ALL_ALLOWED: false,
+      );
+
+      @include assert-equal(testHelpers.diff-map($result, $expectedResult), []);
+    }
+
+    @include it('when one value is "false", the returned map has that value:false and all other values too.') {
+      $map: (
+        "name": false,
+      );
+      $result: rules.value-to-map($map);
+      $expectedResult: (
+        "name": false,
+        $ALL_ALLOWED: false,
+        $ALL_DISALLOWED: false,
+        $HAS_EXPLICIT_TRUE: false,
+      );
+
+      @include assert-equal(testHelpers.diff-map($result, $expectedResult), []);
+    }
+
+    @include it(
+      'when one value is "false" and another "true", the returned map has those keys with given values and HAS_EXPLICIT_TRUE:true'
+    ) {
+      $map: (
+        "name": false,
+        "another": true,
+      );
+      $result: rules.value-to-map($map);
+      $expectedResult: (
+        "name": false,
+        "another": true,
+        $HAS_EXPLICIT_TRUE: true,
+        $ALL_ALLOWED: false,
+        $ALL_DISALLOWED: false,
+      );
+
+      @include assert-equal(testHelpers.diff-map($result, $expectedResult), []);
+    }
+
+    @include it("when one value is a map, that map is stored and HAS_EXPLICIT_TRUE:true.") {
+      $map: (
+        "name": (
+          "child": true,
+        ),
+      );
+      $result: rules.value-to-map($map);
+      $expectedResult: (
+        "name": (
+          "child": true,
+        ),
+        $HAS_EXPLICIT_TRUE: true,
+        $ALL_ALLOWED: false,
+        $ALL_DISALLOWED: false,
+      );
+
+      @include assert-equal(testHelpers.diff-map($result, $expectedResult), []);
+    }
+
+    @include it(
+      "when one value is a map, that map is stored and HAS_EXPLICIT_TRUE:true even if the map has a child key with a false value."
+    ) {
+      $map: (
+        "name": (
+          "child": false,
+        ),
+      );
+      $result: rules.value-to-map($map);
+      $expectedResult: (
+        "name": (
+          "child": false,
+        ),
+        $HAS_EXPLICIT_TRUE: true,
+        $ALL_ALLOWED: false,
+        $ALL_DISALLOWED: false,
+      );
+
+      @include assert-equal(testHelpers.diff-map($result, $expectedResult), []);
+    }
+
+    @include it("when argument is null (or unset), ALL_ALLOWED is true") {
+      $map: null;
+      $result: rules.value-to-map($map);
+      $expectedResult: (
+        $ALL_ALLOWED: true,
+        $HAS_EXPLICIT_TRUE: false,
+        $ALL_DISALLOWED: false,
+      );
+
+      @include assert-equal(testHelpers.diff-map($result, $expectedResult), []);
+    }
+  }
+
+  @include describe(
+    "rules-to-map() uses values-to-map() to create map with rules for modifiers, elements and extras."
+  ) {
+    @include it("with empty map, all rules are allowed") {
+      $map: helpers.create-empty-map();
+      $result: rules.rules-to-map($map);
+      $expectedResult: (
+        "elements": (
+          $ALL_ALLOWED: true,
+          $HAS_EXPLICIT_TRUE: false,
+        ),
+        "modifiers": (
+          $ALL_ALLOWED: true,
+          $HAS_EXPLICIT_TRUE: false,
+        ),
+        "extras": (
+          $ALL_ALLOWED: true,
+          $HAS_EXPLICIT_TRUE: false,
+        ),
+      );
+
+      @include assert-equal(testHelpers.diff-map($result, $expectedResult), []);
+    }
+
+    @include it("if a modifier is set, all elements are not allowed") {
+      $map: (
+        "modifiers": (
+          "modifier": "modifierName",
+        ),
+      );
+      $result: rules.rules-to-map($map);
+      $expectedResult: (
+        "elements": (
+          $ALL_ALLOWED: false,
+          $HAS_EXPLICIT_TRUE: false,
+          $ALLOW_BASE_CONTENT: false,
+        ),
+        "modifiers": (
+          $HAS_EXPLICIT_TRUE: true,
+          $ALL_ALLOWED: false,
+          "modifier": (
+            $HAS_EXPLICIT_TRUE: true,
+            $ALL_ALLOWED: false,
+          ),
+        ),
+        "extras": (
+          $ALL_ALLOWED: true,
+          $HAS_EXPLICIT_TRUE: false,
+        ),
+      );
+
+      @include assert-equal(testHelpers.diff-map($result, $expectedResult), []);
+    }
+
+    @include it("if a modifier and an element is set, all elements are not allowed") {
+      $map: (
+        "elements": (
+          "another-element": true,
+        ),
+        "modifiers": (
+          "modifier": "modifierName",
+          "modifier2": (
+            "another-element": true,
+          ),
+        ),
+      );
+      $result: rules.rules-to-map($map);
+      $expectedResult: (
+        "elements": (
+          $HAS_EXPLICIT_TRUE: true,
+          $ALL_ALLOWED: false,
+          $ALLOW_BASE_CONTENT: false,
+          "another-element": true,
+        ),
+        "modifiers": (
+          $HAS_EXPLICIT_TRUE: true,
+          $ALL_ALLOWED: false,
+          "modifier": (
+            $HAS_EXPLICIT_TRUE: true,
+            $ALL_ALLOWED: false,
+          ),
+          "modifier2": (
+            $HAS_EXPLICIT_TRUE: true,
+            $ALL_ALLOWED: false,
+            "another-element": true,
+          ),
+        ),
+        "extras": (
+          $ALL_ALLOWED: true,
+          $HAS_EXPLICIT_TRUE: false,
+        ),
+      );
+
+      @include assert-equal(testHelpers.diff-map($result, $expectedResult), []);
+    }
+  }
+
+  @include describe(
+    "is-entity-allowed-in-category() returns true if given key is allowed in given rules. is-modifier-allowed() uses it under the hood. "
+  ) {
+    @include it("truthy values result in true. Keys not explicitly allowed are disallowed.") {
+      $modifiers: rules.get-modifiers($defaultMapAsRules);
+
+      @include assert-equal(rules.is-entity-allowed-in-category($modifiers, "truthy"), true);
+      @include assert-equal(rules.is-entity-allowed-in-category($modifiers, "stringy"), true);
+      @include assert-equal(rules.is-entity-allowed-in-category($modifiers, "map-with-mixed-allows"), true);
+      @include assert-equal(rules.is-entity-allowed-in-category($modifiers, "map-with-only-disallowed"), true);
+
+      @include assert-equal(rules.is-modifier-allowed($defaultMapAsRules, "truthy"), true);
+      @include assert-equal(rules.is-modifier-allowed($defaultMapAsRules, "stringy"), true);
+      @include assert-equal(rules.is-modifier-allowed($defaultMapAsRules, "map-with-mixed-allows"), true);
+      @include assert-equal(rules.is-modifier-allowed($defaultMapAsRules, "map-with-only-disallowed"), true);
+
+      // not allowed are disallowed
+      @include assert-equal(rules.is-entity-allowed-in-category($modifiers, "not-set"), false);
+      @include assert-equal(rules.is-modifier-allowed($defaultMapAsRules, "not-set"), false);
+    }
+
+    @include it("null is considered unset value and false when there are explicit true values") {
+      @include assert-equal(
+        rules.is-entity-allowed-in-category(rules.get-modifiers($defaultMapAsRules), "nully"),
+        false
+      );
+      @include assert-equal(rules.is-modifier-allowed($defaultMapAsRules, "nully"), false);
+    }
+
+    @include it("keys with explicit false are disallowed and results in false.") {
+      $modifiers: rules.get-modifiers($defaultMapAsRules);
+
+      @include assert-equal(rules.is-entity-allowed-in-category($modifiers, "falsy"), false);
+      @include assert-equal(rules.is-entity-allowed-in-category($modifiers, "non-existing-name"), false);
+      @include assert-equal(rules.is-modifier-allowed($defaultMapAsRules, "falsy"), false);
+      @include assert-equal(rules.is-modifier-allowed($defaultMapAsRules, "non-existing-name"), false);
+    }
+
+    @include it("explicitly disallowed elements disallow only themselves if no element is explicitly allowed") {
+      $onlyDisallowed: (
+        "falsy": false,
+        "disallowed": false,
+        "nully": null,
+      );
+      $onlyDisallowedAsRules: rules.rules-to-map(
+        (
+          "modifiers": $onlyDisallowed,
+        )
+      );
+      $modifiers: rules.get-modifiers($onlyDisallowedAsRules);
+
+      @include assert-equal(rules.is-entity-allowed-in-category($modifiers, "falsy"), false);
+      @include assert-equal(rules.is-entity-allowed-in-category($modifiers, "disallowed"), false);
+      @include assert-equal(rules.is-modifier-allowed($onlyDisallowedAsRules, "falsy"), false);
+      @include assert-equal(rules.is-modifier-allowed($onlyDisallowedAsRules, "disallowed"), false);
+
+      // not disallowed are allowed
+      @include assert-equal(rules.is-entity-allowed-in-category($modifiers, "nully"), true);
+      @include assert-equal(rules.is-entity-allowed-in-category($modifiers, "any"), true);
+      @include assert-equal(rules.is-modifier-allowed($onlyDisallowedAsRules, "nully"), true);
+      @include assert-equal(rules.is-modifier-allowed($onlyDisallowedAsRules, "any"), true);
+    }
+  }
+
+  @include describe(
+    "is-element-allowed-in-modifier() returns true if given element key is allowed in rules of the given modifier."
+  ) {
+    @include it("true modifier values accept all elements") {
+      @include assert-equal(rules.is-element-allowed-in-modifier($defaultMapAsRules, "truthy", "any"), true);
+      @include assert-equal(rules.is-element-allowed-in-modifier($defaultMapAsRules, "stringy", "stringValue"), true);
+      // because "stringValue" is explicitly allowed, unset keys are not allowed
+      @include assert-equal(rules.is-element-allowed-in-modifier($defaultMapAsRules, "stringy", "any"), false);
+    }
+
+    @include it(
+      "a string modifier values accept ALL elements in the modifier. If modifier has true value, element rules ARE NOT CHECKED"
+    ) {
+      $modifiers: (
+        "modifiers": rules.value-to-map("stringy"),
+        "elements": (
+          "falsy": false,
+        ),
+      );
+
+      @include assert-equal(rules.is-element-allowed-in-modifier($modifiers, "stringy", "any"), true);
+    }
+
+    @include it("explicitly allowed elements are allowed") {
+      @include assert-equal(
+        rules.is-element-allowed-in-modifier($defaultMapAsRules, "map-with-mixed-allows", "mapped-truthy"),
+        true
+      );
+      @include assert-equal(
+        rules.is-element-allowed-in-modifier($defaultMapAsRules, "map-with-mixed-allows", "mapped-stringy"),
+        true
+      );
+    }
+
+    @include it("if an element is explicitly set, other elements are disallowed by default") {
+      @include assert-equal(
+        rules.is-element-allowed-in-modifier($defaultMapAsRules, "map-with-mixed-allows", "not-set"),
+        false
+      );
+    }
+
+    @include it("explicitly disallowed elements disallow only themselves if no element is explicitly allowed") {
+      @include assert-equal(
+        rules.is-element-allowed-in-modifier($defaultMapAsRules, "map-with-only-disallowed", "mapped-falsy"),
+        false
+      );
+      @include assert-equal(
+        rules.is-element-allowed-in-modifier($defaultMapAsRules, "map-with-only-disallowed", "mapped-disallowed"),
+        false
+      );
+      @include assert-equal(
+        rules.is-element-allowed-in-modifier($defaultMapAsRules, "map-with-only-disallowed", "any"),
+        true
+      );
+      @include assert-equal(
+        rules.is-element-allowed-in-modifier($defaultMapAsRules, "map-with-mixed-allows", "mapped-falsy"),
+        false
+      );
+    }
+
+    @include it("unset keys are disallowed/allowed depending on other map values") {
+      // some keys are allowed, so unset ones are disallowed
+      @include assert-equal(rules.is-element-allowed-in-modifier($defaultMapAsRules, "not-set", "not-set"), false);
+
+      // no keys are explicitly allowed, so unset ones are allowed
+      @include assert-equal(rules.is-element-allowed-in-modifier($defaultMapAsRules, "truthy", "not-set"), true);
+
+      // a key is explicitly allowed, so unset ones are disallowed
+      @include assert-equal(rules.is-element-allowed-in-modifier($defaultMapAsRules, "falsy", "not-set"), false);
+      @include assert-equal(rules.is-element-allowed-in-modifier($defaultMapAsRules, "stringy", "not-set"), false);
+
+      // with map as value
+      // a key is explicitly allowed, so unset ones are disallowed
+      @include assert-equal(
+        rules.is-element-allowed-in-modifier($defaultMapAsRules, "map-with-mixed-allows", "not-set"),
+        false
+      );
+      // no keys are explicitly allowed, so unset ones are allowed
+      @include assert-equal(
+        rules.is-element-allowed-in-modifier($defaultMapAsRules, "map-with-only-disallowed", "not-set"),
+        true
+      );
+    }
+
+    @include it("is-element-allowed() checks only rules.elements, not modifiers in any way") {
+      $rulesWithElements: rules.rules-to-map(
+        (
+          "elements": $defaultMap,
+        )
+      );
+
+      @include assert-equal(rules.is-element-allowed($rulesWithElements, "stringy"), true);
+      @include assert-equal(rules.is-element-allowed($rulesWithElements, "truthy"), true);
+      @include assert-equal(rules.is-element-allowed($rulesWithElements, "falsy"), false);
+
+      // some keys are allowed, so unset ones are disallowed
+      @include assert-equal(rules.is-element-allowed($rulesWithElements, "not-set"), false);
+
+      // null is falsy
+      @include assert-equal(rules.is-element-allowed($rulesWithElements, "nully"), false);
+    }
+    @include it(
+      "is-extra-allowed() checks if an extra is allowed rules.extra. The rule values should only be booleans."
+    ) {
+      $rulesWithExtras: rules.rules-to-map(
+        (
+          "extras": (
+            "truthy": true,
+            "falsy": false,
+            "nully": null,
+            "stringy": "stringValue",
+          ),
+        )
+      );
+
+      @include assert-equal(rules.is-extra-allowed($rulesWithExtras, "stringy"), true);
+      @include assert-equal(rules.is-extra-allowed($rulesWithExtras, "truthy"), true);
+      @include assert-equal(rules.is-extra-allowed($rulesWithExtras, "falsy"), false);
+      @include assert-equal(rules.is-extra-allowed($rulesWithExtras, "nully"), false);
+      @include assert-equal(rules.is-extra-allowed($rulesWithExtras, "not-set"), false);
+    }
+    @include it("get-category() returns a key from a map") {
+      $map: (
+        "stringCategory": "cat",
+        "trueCategory": true,
+        "mapCategory": (
+          "subcat": "subcat",
+        ),
+      );
+
+      @include assert-equal(rules.get-category($map, "stringCategory"), "cat");
+      @include assert-equal(rules.get-category($map, "not-set"), null);
+      @include assert-equal(rules.get-category($map, "mapCategory"), map.get($map, "mapCategory"));
+      // if a non-map is passed, null is returned.
+      @include assert-equal(rules.get-category("string", "not-set"), null);
+      @include assert-equal(rules.get-category(1 2 3, "not-set"), null);
+    }
+    @include it("get-category-entity() returns a key from the named category") {
+      $map: (
+        "stringCategory": "cat",
+        "trueCategory": true,
+        "mapCategory": (
+          "subcat": "subcat",
+        ),
+        "mapCategory2": (
+          "subcat": "subcat2",
+        ),
+      );
+
+      @include assert-equal(rules.get-category-entity($map, "stringCategory", "cat"), null);
+      @include assert-equal(rules.get-category-entity($map, "not-set", "not-set"), null);
+      @include assert-equal(rules.get-category-entity($map, "mapCategory", "subcat"), "subcat");
+      @include assert-equal(rules.get-category-entity($map, "mapCategory2", "subcat"), "subcat2");
+      // if a non-map is passed, null is returned.
+      @include assert-equal(rules.get-category-entity("string", "not-set", "any"), null);
+      @include assert-equal(rules.get-category-entity(1 2 3, "not-set", "any"), null);
+    }
+    @include it("get-x() returns the x category from rules and get-x-by-name() returns an entity from the category") {
+      $rules: (
+        "modifiers": (
+          "mod": "mod",
+        ),
+        "elements": (
+          "elem": "elem",
+        ),
+        "extras": (
+          "xtra": "xtra",
+        ),
+      );
+
+      @include assert-equal(
+        rules.get-modifiers($rules),
+        (
+          "mod": "mod",
+        )
+      );
+      @include assert-equal(rules.get-modifier-by-name($rules, "mod"), "mod");
+      @include assert-equal(rules.get-modifier-by-name($rules, "not-set"), null);
+      @include assert-equal(rules.get-modifier-by-name("string", "not-set"), null);
+
+      @include assert-equal(
+        rules.get-elements($rules),
+        (
+          "elem": "elem",
+        )
+      );
+      @include assert-equal(rules.get-element-by-name($rules, "elem"), "elem");
+      @include assert-equal(rules.get-element-by-name($rules, "not-set"), null);
+      @include assert-equal(rules.get-element-by-name("string", "not-set"), null);
+
+      @include assert-equal(
+        rules.get-extras($rules),
+        (
+          "xtra": "xtra",
+        )
+      );
+      @include assert-equal(rules.get-extra-by-name($rules, "xtra"), "xtra");
+      @include assert-equal(rules.get-extra-by-name($rules, "not-set"), null);
+      @include assert-equal(rules.get-extra-by-name("string", "not-set"), null);
+    }
+  }
+}
