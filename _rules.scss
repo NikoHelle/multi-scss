@@ -82,8 +82,13 @@
   @if map.get($modifiers, globals.$HAS_EXPLICIT_TRUE) {
     $elements: map.set($elements, globals.$ALLOW_BASE_CONTENT, false);
     $elements: map.set($elements, globals.$ALL_ALLOWED, false);
-  } @else if map.get($elements, globals.$HAS_EXPLICIT_TRUE) {
+  } @else if
+    map.get($elements, globals.$HAS_EXPLICIT_TRUE) and
+    helpers.can-value-be-falsy(map.get($elements, globals.$BASE_CONTENT_NAME))
+  {
     $elements: map.set($elements, globals.$ALLOW_BASE_CONTENT, false);
+  } @else if map.get($elements, globals.$BASE_CONTENT_NAME) or map.get($elements, globals.$ALL_ALLOWED) {
+    $elements: map.set($elements, globals.$ALLOW_BASE_CONTENT, true);
   }
 
   $target: map.set($target, "modifiers", $modifiers);

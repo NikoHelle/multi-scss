@@ -339,9 +339,14 @@
       @include assert-equal(rules.is-element-allowed-in-modifier($defaultMapAsRules, "stringy", "any"), false);
     }
 
-    @include it("a string modifier values accept all elements") {
+    @include it(
+      "a string modifier values accept ALL elements in the modifier. If modifier has true value, element rules ARE NOT CHECKED"
+    ) {
       $modifiers: (
         "modifiers": rules.value-to-map("stringy"),
+        "elements": (
+          "falsy": false,
+        ),
       );
 
       @include assert-equal(rules.is-element-allowed-in-modifier($modifiers, "stringy", "any"), true);
