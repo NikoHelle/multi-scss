@@ -1,0 +1,186 @@
+@use "sass-true" as *;
+@use "sass:list";
+@use "./test-helpers" as testHelpers;
+@use "../process" as process;
+@use "../globals" as globals;
+@use "../rules" as rules;
+
+/// clear globals etc after each test;
+@function after-each() {
+  $void: globals.update-controllers([]);
+  @return false;
+}
+
+@function create-controller() {
+  @return globals.store-multi-sass-controller(
+    rules.rules-to-map(
+      (
+        "modifiers": true,
+        "elements": true,
+        "extras": true,
+      )
+    ),
+    [],
+    (
+      "blockName": "myBlock",
+      "blockPrefix": "blockPrefix-",
+      "modifierDelimeter": "--",
+    )
+  );
+}
+
+@include describe("_process.scss") {
+  @include it("create-process-level() creates a new level, but does not add it to globals. Parent is assigned.") {
+    $void: create-controller();
+    $newBlock: process.create-process-level(
+      $block: "",
+    );
+
+    $expectedResult: (
+      "type": "block",
+      "parent": null,
+      "isAllowed": true,
+      "selector": ".blockPrefix-myBlock",
+      "depth": 0,
+      "name": "",
+    );
+
+    @include assert-equal(testHelpers.diff-map($newBlock, $expectedResult), []);
+
+    $newModifier: process.create-process-level(
+      $modifier: "modifier",
+    );
+    $expectedResult: (
+      "type": "modifier",
+      "isAllowed": true,
+      "selector": "--modifier",
+      // this is correct, because globals levels are not set
+      "depth": 0,
+      "name": "modifier",
+      "parent": null,
+    );
+
+    @include assert-equal(testHelpers.diff-map($newModifier, $expectedResult), []);
+    @include assert-equal(list.length(globals.get-multi-sass-levels()), 0);
+    $void: after-each();
+  }
+
+  @include it("start() creates a new process level and adds it to globals. Children are nested and parent set.") {
+    $void: create-controller();
+    @include assert-equal(list.length(globals.get-multi-sass-levels()), 0);
+    $newBlock: process.start(
+      $block: "myBlock",
+    );
+    $expectedResult: (
+      "type": "block",
+      "parent": null,
+      "isAllowed": true,
+      "selector": ".blockPrefix-myBlock",
+      "depth": 0,
+      "name": "myBlock",
+    );
+
+    @include assert-equal(testHelpers.diff-map($newBlock, $expectedResult), []);
+    @include assert-equal(list.length(globals.get-multi-sass-levels()), 1);
+
+    $newModifier: process.start(
+      $modifier: "modifier",
+    );
+    $expectedResult: (
+      "type": "modifier",
+      "isAllowed": true,
+      "selector": "--modifier",
+      "depth": 1,
+      "name": "modifier",
+      "parent": $newBlock,
+    );
+
+    @include assert-equal(testHelpers.diff-map($newModifier, $expectedResult), []);
+    @include assert-equal(list.length(globals.get-multi-sass-levels()), 2);
+
+    $void: after-each();
+  }
+
+  @include it("end() removes the current multi-sass level from globals") {
+    $void: create-controller();
+    @include assert-equal(list.length(globals.get-multi-sass-levels()), 0);
+    $newBlock: process.start(
+      $block: "myBlock",
+    );
+    @include assert-equal(list.length(globals.get-multi-sass-levels()), 1);
+    $newModifier: process.start(
+      $modifier: "modifier",
+    );
+    @include assert-equal(list.length(globals.get-multi-sass-levels()), 2);
+    $newModifier: process.start(
+      $element: "element",
+    );
+    @include assert-equal(list.length(globals.get-multi-sass-levels()), 3);
+    $newModifier: process.start(
+      $extra: "extra",
+    );
+    @include assert-equal(list.length(globals.get-multi-sass-levels()), 4);
+    $newModifier: process.start(
+      $custom: "custom",
+    );
+    @include assert-equal(list.length(globals.get-multi-sass-levels()), 5);
+
+    $updateController: process.end();
+    @include assert-equal(list.length(globals.get-multi-sass-levels()), 4);
+    $updateController: process.end();
+    @include assert-equal(list.length(globals.get-multi-sass-levels()), 3);
+    $updateController: process.end();
+    @include assert-equal(list.length(globals.get-multi-sass-levels()), 2);
+    $updateController: process.end();
+    @include assert-equal(list.length(globals.get-multi-sass-levels()), 1);
+    $updateController: process.end();
+    @include assert-equal(list.length(globals.get-multi-sass-levels()), 0);
+    $updateController: process.end();
+    $updateController: process.end();
+
+    $void: after-each();
+  }
+
+  @include it("get-current-state() returns the current state of rules, levels, config, and current level") {
+    $void: create-controller();
+    $newBlock: process.start(
+      $block: "myBlock",
+    );
+    $currentState: process.get-current-state();
+    $expectedState: (
+      "rules": globals.get-multi-sass-rules(),
+      "levels": globals.get-multi-sass-levels(),
+      "config": globals.get-multi-sass-config(),
+      "currentLevel": $newBlock,
+    );
+
+    @include assert-equal(testHelpers.diff-map($currentState, $expectedState), []);
+    $void: after-each();
+  }
+
+  @include it("get-current-level() returns the current level from globals") {
+    $void: create-controller();
+    @include assert-equal(process.get-current-level(), null);
+    $root: process.start(
+      $block: "myBlock",
+    );
+    @include assert-equal(process.get-current-level(), $root);
+    $child: process.start(
+      $modifier: "modifier",
+    );
+    @include assert-equal(process.get-current-level(), $child);
+
+    $grandchild: process.start(
+      $modifier: "modifier2",
+    );
+    @include assert-equal(process.get-current-level(), $grandchild);
+
+    $updateController: process.end();
+    @include assert-equal(process.get-current-level(), $child);
+    $updateController: process.end();
+    @include assert-equal(process.get-current-level(), $root);
+    $updateController: process.end();
+    @include assert-equal(process.get-current-level(), null);
+    $void: after-each();
+  }
+}
