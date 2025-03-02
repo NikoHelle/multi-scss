@@ -1,0 +1,205 @@
+@use "sass-true" as *;
+@use "../output" as outputSCSS;
+@use "../levels" as levels;
+@use "sass:meta";
+
+/** NOTE: some "expect" blocks have a preceding "&" which was added to prevent an extra ".test-output" from sass-true appear in the comparison */
+@include describe("_output.scss outputs given level selector and content") {
+  @include it("selector and output are emitted directly to the place in css") {
+    @include assert {
+      @include output {
+        @include outputSCSS.emit(
+          (
+            "isAllowed": true,
+            "selector": ".selector",
+            "emitTfarget": levels.$EMIT_TARGET_NESTED,
+          )
+        ) {
+          --content: var(--var-content);
+          div {
+            --div-content: var(--var-div-content);
+          }
+        }
+      }
+
+      @include expect {
+        &.selector {
+          --content: var(--var-content);
+        }
+        &.selector div {
+          --div-content: var(--var-div-content);
+        }
+      }
+    }
+  }
+  @include it("if there is a parent, the selector is appended to the parent") {
+    @include assert {
+      @include output {
+        .wrapper {
+          --wrapper-before: var(--var-wrapper-before);
+          @include outputSCSS.emit(
+            (
+              "isAllowed": true,
+              "selector": ".selector",
+              "emitTfarget": levels.$EMIT_TARGET_NESTED,
+            )
+          ) {
+            --content: var(--var-content);
+            div {
+              --div-content: var(--var-div-content);
+            }
+          }
+          --wrapper-after: var(--var-wrapper-after);
+        }
+      }
+
+      @include expect {
+        .wrapper {
+          --wrapper-before: var(--var-wrapper-before);
+          --wrapper-after: var(--var-wrapper-after);
+        }
+        .wrapper.selector {
+          --content: var(--var-content);
+        }
+        .wrapper.selector div {
+          --div-content: var(--var-div-content);
+        }
+      }
+    }
+  }
+  @include it("if emitTarget is nested, the selector is separated with space from the parent") {
+    @include assert {
+      @include output {
+        .wrapper {
+          --wrapper-before: var(--var-wrapper-before);
+          @include outputSCSS.emit(
+            (
+              "isAllowed": true,
+              "selector": ".selector",
+              "emitTarget": levels.$EMIT_TARGET_NESTED,
+            )
+          ) {
+            --content: var(--var-content);
+            div {
+              --div-content: var(--var-div-content);
+            }
+          }
+          --wrapper-after: var(--var-wrapper-after);
+        }
+      }
+
+      @include expect {
+        .wrapper {
+          --wrapper-before: var(--var-wrapper-before);
+          --wrapper-after: var(--var-wrapper-after);
+        }
+        .wrapper .selector {
+          --content: var(--var-content);
+        }
+        .wrapper .selector div {
+          --div-content: var(--var-div-content);
+        }
+      }
+    }
+  }
+  @include it("if emitTarget is root, the output is the same as emitTarget being null") {
+    @include assert {
+      @include output {
+        .wrapper {
+          --wrapper-before: var(--var-wrapper-before);
+          @include outputSCSS.emit(
+            (
+              "isAllowed": true,
+              "selector": ".selector",
+              "emitTarget": levels.$EMIT_TARGET_ROOT,
+            )
+          ) {
+            --content: var(--var-content);
+            div {
+              --div-content: var(--var-div-content);
+            }
+          }
+          --wrapper-after: var(--var-wrapper-after);
+        }
+      }
+
+      @include expect {
+        .wrapper {
+          --wrapper-before: var(--var-wrapper-before);
+          --wrapper-after: var(--var-wrapper-after);
+        }
+        .wrapper.selector {
+          --content: var(--var-content);
+        }
+        .wrapper.selector div {
+          --div-content: var(--var-div-content);
+        }
+      }
+    }
+  }
+  @include it("if contentOly is true, selector is not outputted. emitTarget is ignored") {
+    @include assert {
+      @include output {
+        .wrapper {
+          --wrapper-before: var(--var-wrapper-before);
+          @include outputSCSS.emit(
+            (
+              "isAllowed": true,
+              "contentOnly": true,
+              "selector": ".selector",
+              "emitTarget": levels.$EMIT_TARGET_NESTED,
+            )
+          ) {
+            --content: var(--var-content);
+            div {
+              --div-content: var(--var-div-content);
+            }
+          }
+          --wrapper-after: var(--var-wrapper-after);
+        }
+      }
+
+      @include expect {
+        .wrapper {
+          --wrapper-before: var(--var-wrapper-before);
+          --content: var(--var-content);
+          --wrapper-after: var(--var-wrapper-after);
+        }
+
+        .wrapper div {
+          --div-content: var(--var-div-content);
+        }
+      }
+    }
+  }
+  @include it("if isAllowed is false, nothing is outputted. other props is ignored") {
+    @include assert {
+      @include output {
+        .wrapper {
+          --wrapper-before: var(--var-wrapper-before);
+          @include outputSCSS.emit(
+            (
+              "isAllowed": false,
+              "contentOnly": true,
+              "selector": ".selector",
+              "emitTarget": levels.$EMIT_TARGET_NESTED,
+            )
+          ) {
+            --content: var(--var-content);
+            div {
+              --div-content: var(--var-div-content);
+            }
+          }
+          --wrapper-after: var(--var-wrapper-after);
+        }
+      }
+
+      @include expect {
+        .wrapper {
+          --wrapper-before: var(--var-wrapper-before);
+          --wrapper-after: var(--var-wrapper-after);
+        }
+      }
+    }
+  }
+}
