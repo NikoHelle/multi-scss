@@ -1,0 +1,67 @@
+/* stylelint-disable scss/dollar-variable-pattern */
+@use "sass:map";
+@use "sass:meta";
+@use "./globals.scss" as globals;
+@use "./rules.scss" as rules;
+@use "./helpers.scss" as helpers;
+@use "./process.scss" as process;
+@use "./output.scss" as output;
+
+/// @params Named args:
+///  - $alias
+///  - $block
+///  - $config
+///  - $elements
+///  - $extras
+///  - $modifiers
+/// @returns a map with "rules" | "levels" | "config"
+
+@function init-multi-sass($args...) {
+  $argMap: helpers.arg-list-to-map($args...);
+  $rootSelector: null;
+  $rules: rules.rules-to-map($argMap);
+  $levels: [];
+  $blockName: map.get($argMap, "block");
+  $configInArgs: map.get($argMap, "config") or helpers.create-empty-map();
+  $aliasInArgs: map.get($argMap, "alias") or null;
+  $config: map.merge(
+    (
+      "blockName": $blockName,
+      "rootSelector": $rootSelector,
+      "blockPrefix": globals.$BLOCK-PREFIX,
+      "modifierDelimeter": globals.$MODIFIER-DELIMETER,
+      "elementDelimeter": globals.$ELEMENT-DELIMETER,
+      "alias": $aliasInArgs,
+      "emitContentOnly": null,
+    ),
+    $configInArgs
+  );
+
+  @return globals.store-multi-sass-controller($rules, $levels, $config);
+}
+
+/// Must be called when the init-multi-sass() is at its end
+/// Or nested init-multi-sass() blocks will get mixed up.
+
+@function end-multi-sass() {
+  @return globals.remove-current-controller();
+}
+
+/// Shorthand to call init + end in one mixin
+@mixin multi-sass($args...) {
+  $void: init-multi-sass($args...);
+  @content;
+
+  $void: end-multi-sass();
+}
+
+/// Creates a level and emits the css and children
+@mixin start-emit-end($args...) {
+  $createdLevel: process.start($args...);
+
+  @include output.emit($createdLevel) {
+    @content;
+  }
+
+  $void: process.end();
+}
