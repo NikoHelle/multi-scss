@@ -1,0 +1,90 @@
+@use "sass-true" as *;
+// using index so that we can test the whole process and no need to test it separately
+@use "../index" as *;
+@mixin testSCSS($custom: true) {
+  @include multi-sass($modifiers: true, $extras: true, $elements: $custom, $block: "block-name") {
+    @include custom("div.root") {
+      .root {
+        --root: var(--var-root);
+      }
+    }
+    @include custom("div") {
+      --div: var(--var-div);
+    }
+
+    .wrapper {
+      --wrapper-class: var(--var-wrapper-class);
+      @include custom("#div.in-wrapper") {
+        --wrapper: var(--var-wrapper);
+      }
+    }
+  }
+}
+
+@include describe(
+  "Custom entities are not controllable by themselves. They are are all outputted, if parent entity is also."
+) {
+  @include it("are all outputted.") {
+    @include assert {
+      @include output {
+        @include testSCSS;
+      }
+
+      @include expect {
+        &div.root .root {
+          --root: var(--var-root);
+        }
+        &div {
+          --div: var(--var-div);
+        }
+        .wrapper {
+          --wrapper-class: var(--var-wrapper-class);
+        }
+        .wrapper#div.in-wrapper {
+          --wrapper: var(--var-wrapper);
+        }
+      }
+    }
+  }
+}
+
+@include describe("Can be controlled with extras.") {
+  @include it("are all outputted.") {
+    @include assert {
+      @include output {
+        @include multi-sass($modifiers: true, $extras: "allowed", $elements: true, $block: "block-name") {
+          @include extra("not-allowed") {
+            @include custom("div.root") {
+              .root {
+                --root: var(--var-root);
+              }
+            }
+          }
+          @include extra("allowed") {
+            @include custom("div") {
+              --div: var(--var-div);
+            }
+          }
+
+          .wrapper {
+            --wrapper-class: var(--var-wrapper-class);
+            @include extra("not-allowed-either") {
+              @include custom("#div.in-wrapper") {
+                --wrapper: var(--var-wrapper);
+              }
+            }
+          }
+        }
+      }
+
+      @include expect {
+        &div {
+          --div: var(--var-div);
+        }
+        .wrapper {
+          --wrapper-class: var(--var-wrapper-class);
+        }
+      }
+    }
+  }
+}

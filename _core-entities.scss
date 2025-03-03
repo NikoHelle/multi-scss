@@ -1,0 +1,46 @@
+@use "./core-funcs.scss" as coreFuncs;
+
+/// Emits a block
+@mixin block() {
+  @include coreFuncs.start-emit-end($block: "") {
+    @content;
+  }
+}
+
+/// Emits a modifier
+@mixin modifier($modifier) {
+  @include coreFuncs.start-emit-end($modifier: $modifier) {
+    @content;
+  }
+}
+
+/// Emits an element
+@mixin element($element) {
+  @include coreFuncs.start-emit-end($element: $element) {
+    @content;
+  }
+}
+
+/// Handles extra rules and emits its contents
+@mixin extra($extra) {
+  @include coreFuncs.start-emit-end($extra: $extra) {
+    @content;
+  }
+}
+
+/// Emits selector + css content.
+/// Usable when a selector should findable as a level.
+/// If not needed, use plain css selectors.
+/// Used internally in helpers.
+@mixin custom($selector) {
+  @include coreFuncs.start-emit-end($custom: $selector) {
+    @content;
+  }
+}
+
+/// Emits just css content without selectors
+@mixin content($element: "") {
+  @include coreFuncs.start-emit-end($content: $element) {
+    @content;
+  }
+}
