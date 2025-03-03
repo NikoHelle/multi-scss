@@ -1,0 +1,143 @@
+@use "sass-true" as *;
+@use "../_core-funcs" as coreFuncs;
+@use "../globals" as globals;
+@use "../helpers" as helpers;
+@use "../rules" as rules;
+@use "../process" as process;
+@use "../output" as output;
+@use "sass:map";
+@use "sass:meta";
+@use "sass:list";
+
+/// clear globals etc after each test;
+@function after-each() {
+  $void: globals.update-controllers([]);
+  @return false;
+}
+
+@function verify-controller($controller) {
+  @if $controller == null {
+    @error "Controller is null";
+    @return null;
+  }
+  $levels: map.get($controller, "levels");
+  $rules: map.get($controller, "rules");
+  $config: map.get($controller, "config");
+  @if meta.type-of($levels) != "list" {
+    @error "Levels is not a list";
+    @return null;
+  }
+  @if meta.type-of($rules) != "map" {
+    @error "Rules is not a map";
+    @return null;
+  }
+  @if meta.type-of($config) != "map" {
+    @error "Config is not a map";
+    @return null;
+  }
+  @return $controller;
+}
+
+@include describe("_core-funcs.scss") {
+  @include it("init-multi-sass initializes the multi-sass controller with correct config and returns it.") {
+    $args: (
+      "block": "test-block",
+      "config": (
+        "customConfig": true,
+      ),
+    );
+    $result: coreFuncs.init-multi-sass($args...);
+    $expectedConfig: (
+      "blockName": "test-block",
+      "rootSelector": null,
+      "blockPrefix": globals.$BLOCK-PREFIX,
+      "modifierDelimeter": globals.$MODIFIER-DELIMETER,
+      "elementDelimeter": globals.$ELEMENT-DELIMETER,
+      "alias": null,
+      "emitContentOnly": null,
+      "customConfig": true,
+    );
+
+    @include assert-equal(map.get($result, "config"), $expectedConfig);
+    $void: verify-controller(globals.get-current-controller());
+    $void: after-each();
+  }
+
+  @include it("end-multi-sass removes the current multi-sass controller and returns list of controllers") {
+    $args: (
+      "block": "test-block",
+    );
+    $void: coreFuncs.init-multi-sass($args...);
+    @include assert-equal(list.length(globals.get-controllers()), 1);
+    $void: coreFuncs.init-multi-sass($args...);
+    @include assert-equal(list.length(globals.get-controllers()), 2);
+    $result: coreFuncs.end-multi-sass();
+    @include assert-equal(list.length(globals.get-controllers()), 1);
+    $result: coreFuncs.end-multi-sass();
+    @include assert-equal(list.length(globals.get-controllers()), 0);
+    @include assert-equal(list.length($result), 0);
+    $void: after-each();
+  }
+
+  @include it("multi-scss mixin calls init-multi-sass and end-multi-sass and emits content ") {
+    $args: (
+      "block": "test-block",
+    );
+    @include assert {
+      @include output {
+        @include coreFuncs.multi-scss($args...) {
+          div {
+            --multi-scss: var(--var-multi-scss);
+          }
+        }
+      }
+
+      @include expect {
+        div {
+          --multi-scss: var(--var-multi-scss);
+        }
+      }
+    }
+
+    @include assert-equal(list.length(globals.get-controllers()), 0);
+    $levels: globals.get-multi-sass-levels();
+    @include assert-equal(list.length($levels), 0);
+    $void: after-each();
+  }
+
+  @include it("start-emit-end mixin creates a level and emits CSS correctly") {
+    $void: coreFuncs.init-multi-sass(
+      $modifiers: true,
+      $elements: true,
+      $extras: true,
+      $block: "myBlock",
+      $alias: null,
+      $config: (
+        "blockPrefix": "block-prefix-",
+      ),
+    );
+    @include assert {
+      @include output {
+        @include coreFuncs.start-emit-end(
+          (
+            "block": "block-name",
+          )
+        ) {
+          div {
+            --start-emit-end: var(--var-start-emit-end);
+          }
+        }
+      }
+      @include expect {
+        .block-prefix-block-name div {
+          --start-emit-end: var(--var-start-emit-end);
+        }
+      }
+    }
+
+    $void: verify-controller(globals.get-current-controller());
+    $levels: globals.get-multi-sass-levels();
+    @include assert-equal(list.length($levels), 0);
+    $void: after-each();
+  }
+}
