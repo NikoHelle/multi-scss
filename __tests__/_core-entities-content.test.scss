@@ -1,0 +1,133 @@
+@use "sass-true" as *;
+// using index so that we can test the whole process and no need to test it separately
+@use "../index" as *;
+@mixin testSCSS($elements: true, $modifiers: true) {
+  @include multi-sass($modifiers: $modifiers, $extras: true, $elements: $elements, $block: "block-name") {
+    @include content("root") {
+      .root {
+        --root: var(--var-root);
+      }
+    }
+
+    .wrapper {
+      --wrapper-class: var(--var-wrapper-class);
+      @include content("wrapper-content") {
+        --wrapper: var(--var-wrapper);
+      }
+    }
+    header.class {
+      --header: var(--var-header);
+
+      @include modifier("modifier") {
+        @include content() {
+          --modifier-content: var(--var-modifier-content);
+        }
+        @include content("mobile") {
+          --modifier-mobile-content: var(--var-modifier-mobile-content);
+        }
+        --modifier: var(--var-modifier);
+      }
+    }
+  }
+}
+
+@include describe("content emits its css block. Does not create selectors. Controlled with elements") {
+  @include it("All content is outputted without element restrictions") {
+    @include assert {
+      @include output {
+        @include testSCSS;
+      }
+
+      @include expect {
+        .root {
+          --root: var(--var-root);
+        }
+
+        .wrapper {
+          --wrapper-class: var(--var-wrapper-class);
+          --wrapper: var(--var-wrapper);
+        }
+        header.class {
+          --header: var(--var-header);
+        }
+        header.class--modifier {
+          --modifier-content: var(--var-modifier-content);
+          --modifier-mobile-content: var(--var-modifier-mobile-content);
+          --modifier: var(--var-modifier);
+        }
+      }
+    }
+  }
+  @include it("Nothing is outputted if elements are not allowed. Content in modifier must be disallowed separately") {
+    @include assert {
+      @include output {
+        @include testSCSS(false, "none");
+      }
+
+      @include expect {
+        .wrapper {
+          --wrapper-class: var(--var-wrapper-class);
+        }
+        header.class {
+          --header: var(--var-header);
+        }
+      }
+    }
+  }
+  @include it("Elements prop controls content. Only outside modifiers") {
+    @include assert {
+      @include output {
+        @include testSCSS("root");
+      }
+
+      @include expect {
+        .root {
+          --root: var(--var-root);
+        }
+
+        .wrapper {
+          --wrapper-class: var(--var-wrapper-class);
+        }
+        header.class {
+          --header: var(--var-header);
+        }
+        header.class--modifier {
+          --modifier-content: var(--var-modifier-content);
+          --modifier-mobile-content: var(--var-modifier-mobile-content);
+          --modifier: var(--var-modifier);
+        }
+      }
+    }
+  }
+  @include it("Content inside modifier is controlled by modifiers props") {
+    @include assert {
+      @include output {
+        @include testSCSS(
+          "root",
+          (
+            "modifier": (
+              "mobile": true,
+            ),
+          )
+        );
+      }
+
+      @include expect {
+        .root {
+          --root: var(--var-root);
+        }
+
+        .wrapper {
+          --wrapper-class: var(--var-wrapper-class);
+        }
+        header.class {
+          --header: var(--var-header);
+        }
+        header.class--modifier {
+          --modifier-mobile-content: var(--var-modifier-mobile-content);
+          --modifier: var(--var-modifier);
+        }
+      }
+    }
+  }
+}

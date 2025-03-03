@@ -1,0 +1,138 @@
+@use "sass-true" as *;
+// using index so that we can test the whole process and no need to test it separately
+@use "../index" as *;
+@mixin testSCSS($extras: true) {
+  @include multi-sass($modifiers: true, $elements: true, $extras: $extras, $block: "block-name") {
+    @include extra("root") {
+      .root {
+        --root: var(--var-root);
+      }
+    }
+
+    @include extra("root-sibling") {
+      .root-sibling {
+        --root-sibling: var(--var-root-sibling);
+      }
+    }
+
+    .wrapper {
+      --wrapper-class: var(--var-wrapper-class);
+      @include extra("wrapper") {
+        --wrapper: var(--var-wrapper);
+      }
+      span {
+        --wrapper-span: var(--var-wrapper-span);
+      }
+      @include block {
+        --hds-test: var(--var-base);
+
+        @include extra("block") {
+          --hds-test-block: var(--var-block);
+        }
+      }
+    }
+  }
+}
+
+@include describe("Extra entities") {
+  @include it("are all outputted when $extra is true.") {
+    @include assert {
+      @include output {
+        @include testSCSS;
+      }
+
+      @include expect {
+        .root {
+          --root: var(--var-root);
+        }
+
+        .root-sibling {
+          --root-sibling: var(--var-root-sibling);
+        }
+
+        .wrapper {
+          --wrapper-class: var(--var-wrapper-class);
+          --wrapper: var(--var-wrapper);
+        }
+        .wrapper span {
+          --wrapper-span: var(--var-wrapper-span);
+        }
+
+        .wrapper .block-name {
+          --hds-test: var(--var-base);
+          --hds-test-block: var(--var-block);
+        }
+      }
+    }
+  }
+}
+@include describe("Output is controlled with the extras parameter") {
+  @include it("No extras are outputted when $extras is false.") {
+    @include assert {
+      @include output {
+        @include testSCSS(false);
+      }
+
+      @include expect {
+        .wrapper {
+          --wrapper-class: var(--var-wrapper-class);
+        }
+        .wrapper span {
+          --wrapper-span: var(--var-wrapper-span);
+        }
+        .wrapper .block-name {
+          --hds-test: var(--var-base);
+        }
+      }
+    }
+  }
+  @include it("Some extras are outputted when $extras is a map of extras names to booleans.") {
+    @include assert {
+      @include output {
+        @include testSCSS(
+          (
+            block: true,
+          )
+        );
+      }
+
+      @include expect {
+        .wrapper {
+          --wrapper-class: var(--var-wrapper-class);
+        }
+        .wrapper span {
+          --wrapper-span: var(--var-wrapper-span);
+        }
+
+        .wrapper .block-name {
+          --hds-test: var(--var-base);
+          --hds-test-block: var(--var-block);
+        }
+      }
+    }
+  }
+  @include it("String value allows only given extra to be outputted.") {
+    @include assert {
+      @include output {
+        @include testSCSS("root");
+      }
+
+      @include expect {
+        .root {
+          --root: var(--var-root);
+        }
+
+        .wrapper {
+          --wrapper-class: var(--var-wrapper-class);
+        }
+        .wrapper span {
+          --wrapper-span: var(--var-wrapper-span);
+        }
+
+        .wrapper .block-name {
+          --hds-test: var(--var-base);
+        }
+      }
+    }
+  }
+}

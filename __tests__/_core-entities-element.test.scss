@@ -1,0 +1,183 @@
+@use "sass-true" as *;
+// using index so that we can test the whole process and no need to test it separately
+@use "../index" as *;
+@mixin testSCSS($elements: true) {
+  @include multi-sass($modifiers: true, $elements: $elements, $extras: true, $block: "block-name") {
+    div.class {
+      --div-class: var(--var-div-class);
+      @include element("elem1") {
+        --elem1: var(--var-elem1);
+
+        div {
+          --elem1-div: var(--var-elem1-div);
+        }
+      }
+      span {
+        --div-span: var(--var-div-span);
+      }
+    }
+
+    @include block {
+      @include element("elem2") {
+        --elem2: var(--var-elem2);
+
+        @include element("elem2-inner-elem") {
+          --elem2-inner-elem: var(--var-elem2-inner-elem);
+
+          div {
+            --elem2-inner-elem-div: var(--var-elem2-inner-elem-div);
+          }
+        }
+
+        ul {
+          li.class {
+            @include element("li-elem") {
+              --ul-li-li-elem: var(--var-ul-li-li-elem);
+
+              a.class {
+                --ul-li-li-elem-a: var(--var-ul-li-li-elem-a);
+
+                @include element("a-elem") {
+                  --ul-li-li-elem-a-a-elem: var(--ul-li-li-elem-a-a-elem);
+
+                  span {
+                    --ul-li-li-elem-a-a-elem-span: var(--ul-li-li-elem-a-a-elem-span);
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+@include describe("Element entities") {
+  @include it("are all outputted when $elements is true.") {
+    @include assert {
+      @include output {
+        @include testSCSS;
+      }
+
+      @include expect {
+        div.class {
+          --div-class: var(--var-div-class);
+        }
+        div.class__elem1 {
+          --elem1: var(--var-elem1);
+        }
+
+        div.class__elem1 div {
+          --elem1-div: var(--var-elem1-div);
+        }
+        div.class span {
+          --div-span: var(--var-div-span);
+        }
+
+        .block-name__elem2 {
+          --elem2: var(--var-elem2);
+        }
+
+        .block-name__elem2__elem2-inner-elem {
+          --elem2-inner-elem: var(--var-elem2-inner-elem);
+        }
+
+        .block-name__elem2__elem2-inner-elem div {
+          --elem2-inner-elem-div: var(--var-elem2-inner-elem-div);
+        }
+
+        .block-name__elem2 ul li.class__li-elem {
+          --ul-li-li-elem: var(--var-ul-li-li-elem);
+        }
+
+        .block-name__elem2 ul li.class__li-elem a.class {
+          --ul-li-li-elem-a: var(--var-ul-li-li-elem-a);
+        }
+
+        .block-name__elem2 ul li.class__li-elem a.class__a-elem {
+          --ul-li-li-elem-a-a-elem: var(--ul-li-li-elem-a-a-elem);
+        }
+
+        .block-name__elem2 ul li.class__li-elem a.class__a-elem span {
+          --ul-li-li-elem-a-a-elem-span: var(--ul-li-li-elem-a-a-elem-span);
+        }
+      }
+    }
+  }
+  @include describe("Output is controlled with the elements parameter") {
+    @include it("No elements are outputted when $elements is false.") {
+      @include assert {
+        @include output {
+          @include testSCSS(false);
+        }
+
+        @include expect {
+          div.class {
+            --div-class: var(--var-div-class);
+          }
+
+          div.class span {
+            --div-span: var(--var-div-span);
+          }
+        }
+      }
+    }
+    @include it("Some elements are outputted when $elements is a map of elements names to booleans.") {
+      @include assert {
+        @include output {
+          @include testSCSS(
+            (
+              "elem2": true,
+              "li-elem": true,
+            )
+          );
+        }
+
+        @include expect {
+          div.class {
+            --div-class: var(--var-div-class);
+          }
+
+          div.class span {
+            --div-span: var(--var-div-span);
+          }
+          .block-name__elem2 {
+            --elem2: var(--var-elem2);
+          }
+
+          .block-name__elem2 ul li.class__li-elem {
+            --ul-li-li-elem: var(--var-ul-li-li-elem);
+          }
+
+          .block-name__elem2 ul li.class__li-elem a.class {
+            --ul-li-li-elem-a: var(--var-ul-li-li-elem-a);
+          }
+        }
+      }
+    }
+    @include it("String value allows only given element to be outputted.") {
+      @include assert {
+        @include output {
+          @include testSCSS("elem1");
+        }
+
+        @include expect {
+          div.class {
+            --div-class: var(--var-div-class);
+          }
+          div.class__elem1 {
+            --elem1: var(--var-elem1);
+          }
+
+          div.class__elem1 div {
+            --elem1-div: var(--var-elem1-div);
+          }
+
+          div.class span {
+            --div-span: var(--var-div-span);
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,137 @@
+@use "sass-true" as *;
+// using index so that we can test the whole process and no need to test it separately
+@use "../index" as *;
+
+@mixin testSCSS($blockName) {
+  @include multi-sass($modifiers: true, $elements: true, $extras: true, $block: $blockName) {
+    @include block {
+      --block: var(--var-block);
+
+      div {
+        --block-div: var(--var-block-div);
+      }
+    }
+
+    @include block {
+      --block2: var(--var-block2);
+
+      @include block {
+        --block2-inner-block: var(--var-block2-inner-block);
+
+        div {
+          --block2-div: var(--var-block2-div);
+        }
+      }
+
+      @content;
+
+      ul {
+        li {
+          @include block {
+            --ul-li-block3: var(--var-ul-li-block3);
+
+            a {
+              --ul-li-block3-a: var(--var-ul-li-block3-a);
+
+              @include block {
+                --ul-li-block3-a-block4: var(--ul-li-block3-a-block4);
+
+                span {
+                  --ul-li-block3-a-block4-span: var(--ul-li-block3-a-block4-span);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+@include describe("block() entity") {
+  @include it(
+    "outputs blocks according to config block name. New block selector is added where ever block is defined."
+  ) {
+    @include assert {
+      @include output {
+        @include testSCSS("block-name") {
+          @include testSCSS("inner-block");
+        }
+      }
+
+      @include expect {
+        .block-name {
+          --block: var(--var-block);
+        }
+
+        .block-name div {
+          --block-div: var(--var-block-div);
+        }
+
+        .block-name {
+          --block2: var(--var-block2);
+        }
+
+        .block-name.block-name {
+          --block2-inner-block: var(--var-block2-inner-block);
+        }
+
+        .block-name.block-name div {
+          --block2-div: var(--var-block2-div);
+        }
+
+        .block-name .inner-block {
+          --block: var(--var-block);
+        }
+
+        .block-name .inner-block div {
+          --block-div: var(--var-block-div);
+        }
+
+        .block-name .inner-block {
+          --block2: var(--var-block2);
+        }
+
+        .block-name .inner-block.inner-block {
+          --block2-inner-block: var(--var-block2-inner-block);
+        }
+
+        .block-name .inner-block.inner-block div {
+          --block2-div: var(--var-block2-div);
+        }
+
+        .block-name .inner-block ul li.inner-block {
+          --ul-li-block3: var(--var-ul-li-block3);
+        }
+
+        .block-name .inner-block ul li.inner-block a {
+          --ul-li-block3-a: var(--var-ul-li-block3-a);
+        }
+
+        .block-name .inner-block ul li.inner-block a.inner-block {
+          --ul-li-block3-a-block4: var(--ul-li-block3-a-block4);
+        }
+
+        .block-name .inner-block ul li.inner-block a.inner-block span {
+          --ul-li-block3-a-block4-span: var(--ul-li-block3-a-block4-span);
+        }
+
+        .block-name ul li.block-name {
+          --ul-li-block3: var(--var-ul-li-block3);
+        }
+
+        .block-name ul li.block-name a {
+          --ul-li-block3-a: var(--var-ul-li-block3-a);
+        }
+
+        .block-name ul li.block-name a.block-name {
+          --ul-li-block3-a-block4: var(--ul-li-block3-a-block4);
+        }
+
+        .block-name ul li.block-name a.block-name span {
+          --ul-li-block3-a-block4-span: var(--ul-li-block3-a-block4-span);
+        }
+      }
+    }
+  }
+}
