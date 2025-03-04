@@ -1,0 +1,62 @@
+/* stylelint-disable scss/dollar-variable-pattern */
+@use "sass:map";
+@use "./globals.scss" as globals;
+@use "./levels.scss" as levels;
+
+@use "./helpers.scss" as helpers;
+@use "./process.scss" as process;
+@use "./output.scss" as output;
+@use "./selectors.scss" as selectors;
+@use "./core-entities.scss" as core;
+
+/// Handles extra rules and emits a custom selector
+@mixin extra-selector($name, $selector) {
+  @include core.extra($name) {
+    @include core.custom($selector) {
+      @content;
+    }
+  }
+}
+
+/// Handles extra rules and emits a custom selector as a descendant
+@mixin extra-descendant($name, $selector) {
+  @include core.extra($name) {
+    @include core.custom(" #{$selector}") {
+      @content;
+    }
+  }
+}
+
+@mixin if-content-allowed() {
+  $currentLevel: process.get-current-level();
+
+  /// Create a fake level, so all checks are made like a normal entity
+
+  $ARGS_MAP: helpers.create-empty-map();
+  $ARGS_MAP: map.set($ARGS_MAP, "element", globals.$BASE_CONTENT_NAME);
+  $level: levels.create-level-data($currentLevel, $ARGS_MAP);
+  $ruleMap: globals.get-multi-sass-rules();
+  $isAllowed: levels.is-level-allowed-in-rules($ruleMap, $level);
+
+  /// Clear the fake level
+  $level: ();
+
+  @if $isAllowed {
+    @content;
+  }
+}
+
+/// Shorthand for custom(' #{$selector}')
+/// Can also be used to add a new child
+@mixin descendant($selector) {
+  @include core.custom(" #{$selector}") {
+    @content;
+  }
+}
+
+/// Shorthand for custom('.#{$selector}')
+@mixin class($selector) {
+  @include core.custom(".#{$selector}") {
+    @content;
+  }
+}

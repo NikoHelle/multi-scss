@@ -1,0 +1,76 @@
+@use "sass-true" as *;
+// using index so that we can test the whole process and no need to test it separately
+@use "../index" as *;
+@mixin testSCSS($extras: true) {
+  @include multi-sass($modifiers: true, $extras: $extras, $elements: true, $block: "block-name") {
+    @include extra-selector("root", ".section#root") {
+      .root {
+        --section-root: var(--var-section-root);
+      }
+    }
+
+    @include extra-selector("root-sibling", ".div.root-sibling") {
+      --div-root-sibling: var(--var-div-root-sibling);
+    }
+
+    .wrapper {
+      --wrapper: var(--var-wrapper);
+      @include extra-selector("wrapper-div", ".div") {
+        --wrapper-div: var(--var-wrapper-div);
+      }
+    }
+  }
+}
+
+@include describe("extra-selector is extra+custom entities combined") {
+  @include it("output is from custom and control with extra") {
+    @include assert {
+      @include output {
+        @include testSCSS;
+      }
+
+      @include expect {
+        &.section#root .root {
+          --section-root: var(--var-section-root);
+        }
+
+        &.div.root-sibling {
+          --div-root-sibling: var(--var-div-root-sibling);
+        }
+
+        .wrapper {
+          --wrapper: var(--var-wrapper);
+        }
+        .wrapper.div {
+          --wrapper-div: var(--var-wrapper-div);
+        }
+      }
+    }
+  }
+  @include it("the $extra parameter controls the output") {
+    @include assert {
+      @include output {
+        @include testSCSS(
+          (
+            "root": true,
+            "root-sibling": false,
+            "wrapper-div": true,
+          )
+        );
+      }
+
+      @include expect {
+        &.section#root .root {
+          --section-root: var(--var-section-root);
+        }
+
+        .wrapper {
+          --wrapper: var(--var-wrapper);
+        }
+        .wrapper.div {
+          --wrapper-div: var(--var-wrapper-div);
+        }
+      }
+    }
+  }
+}
