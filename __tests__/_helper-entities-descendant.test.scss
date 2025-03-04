@@ -1,0 +1,47 @@
+@use "sass-true" as *;
+// using index so that we can test the whole process and no need to test it separately
+@use "../index" as *;
+@mixin testSCSS($custom: true) {
+  @include multi-sass($modifiers: true, $extras: true, $elements: $custom, $block: "block-name") {
+    @include descendant("div.root") {
+      .root {
+        --root: var(--var-root);
+      }
+    }
+    @include descendant("div") {
+      --div: var(--var-div);
+    }
+
+    .wrapper {
+      --wrapper-class: var(--var-wrapper-class);
+      @include descendant("#div.in-wrapper") {
+        --wrapper: var(--var-wrapper);
+      }
+    }
+  }
+}
+
+@include describe("descendant() is custom(), but a space is added to the selector to make it  a descendant") {
+  @include it("are all outputted.") {
+    @include assert {
+      @include output {
+        @include testSCSS;
+      }
+
+      @include expect {
+        div.root .root {
+          --root: var(--var-root);
+        }
+        div {
+          --div: var(--var-div);
+        }
+        .wrapper {
+          --wrapper-class: var(--var-wrapper-class);
+        }
+        .wrapper #div.in-wrapper {
+          --wrapper: var(--var-wrapper);
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,49 @@
+@use "sass-true" as *;
+// using index so that we can test the whole process and no need to test it separately
+@use "../index" as *;
+@mixin testSCSS($custom: true) {
+  @include multi-sass($modifiers: true, $extras: true, $elements: $custom, $block: "block-name") {
+    @include class("root") {
+      .child {
+        --root: var(--var-root);
+      }
+    }
+    div {
+      @include class("div-class") {
+        --div: var(--var-div);
+      }
+    }
+
+    .wrapper {
+      --wrapper-class: var(--var-wrapper-class);
+      @include class("in-wrapper") {
+        --wrapper: var(--var-wrapper);
+      }
+    }
+  }
+}
+
+@include describe("class() is custom(), but '.' added to the selector to make it class name") {
+  @include it("are all outputted.") {
+    @include assert {
+      @include output {
+        @include testSCSS;
+      }
+
+      @include expect {
+        &.root .child {
+          --root: var(--var-root);
+        }
+        div.div-class {
+          --div: var(--var-div);
+        }
+        .wrapper {
+          --wrapper-class: var(--var-wrapper-class);
+        }
+        .wrapper.in-wrapper {
+          --wrapper: var(--var-wrapper);
+        }
+      }
+    }
+  }
+}
