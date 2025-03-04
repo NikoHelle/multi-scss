@@ -1,0 +1,186 @@
+/* stylelint-disable scss/dollar-variable-pattern */
+@use "sass:map";
+@use "sass:meta";
+@use "./globals.scss" as globals;
+@use "./levels.scss" as levels;
+@use "./helpers.scss" as helpers;
+@use "./process.scss" as process;
+@use "./output.scss" as output;
+@use "./selectors.scss" as selectors;
+@use "./core-entities.scss" as coreEntities;
+
+/// Emits css content for multiple selectors. Selectors are appended to parent.
+/// Example: ((('modifier': 'hello'), ('modifier': 'hello2'), ('element': 'elem'), ('custom': ' div'))) {...}
+/// Creates <parent>--hello, <parent>--hello2, <parent>__elem, <parent> div {...}
+@mixin selector-list($list) {
+  $selector: "";
+  $config: globals.get-multi-sass-config();
+
+  @each $item in $list {
+    $tempLevel: process.create-process-level(
+      $ARGS_MAP: $item,
+    );
+    $keyAndValue: helpers.get-map-data-with-value($item);
+    $type: map.get($keyAndValue, "key");
+    $name: map.get($keyAndValue, "value");
+    $levelSelector: levels.get-level-selector($tempLevel);
+
+    @if $levelSelector {
+      @if $selector != "" {
+        $selector: "#{$selector},&#{$levelSelector}";
+      } @else {
+        $selector: "&#{$levelSelector}";
+      }
+    }
+  }
+
+  $newLevel: process.create-process-level(
+    $custom: "> .will-be-overridden",
+  );
+  $newLevel: levels.set-level-selector($newLevel, $selector);
+
+  /// Children of this entity should emit nested css:
+  $newLevel: levels.set-level-emit-target-to-nested($newLevel);
+  $void: globals.add-multi-sass-level($newLevel);
+
+  @include output.emit($newLevel) {
+    @content;
+  }
+
+  $void: process.end();
+}
+
+/// @internal
+/// Finds the closest entity that matches $args and appends to its selector with given separator
+/// Used via other mixins below
+@mixin linked-entities($typeAndName, $separator, $args...) {
+  $currentLevel: process.get-current-level();
+  $currentLevelSelector: if($currentLevel, levels.get-level-selector($currentLevel), "&");
+  $closest: levels.find-closest-in-current($args...);
+  $type: map.get($typeAndName, "type");
+  $name: map.get($typeAndName, "name");
+
+  @if $closest and $type {
+    $closestSelector: levels.collect-parent-entity-selectors($closest);
+    $ARGS_MAP: helpers.create-empty-map();
+    $ARGS_MAP: map.set($ARGS_MAP, $type, $name);
+    $newLevel: process.create-process-level(
+      $ARGS_MAP: $ARGS_MAP,
+    );
+    $selector: selectors.create-selector($type, $name, globals.get-multi-sass-config());
+    $newLevel: levels.set-level-selector($newLevel, "#{$closestSelector}#{$selector}");
+
+    @if $separator == " " {
+      $newLevel: levels.set-level-emit-target-to-nested($newLevel);
+    }
+
+    $void: globals.add-multi-sass-level($newLevel);
+
+    /// Depth is wrong. (depends on separator)
+    /// Parent is kind of wrong (depends on separator)
+    @include output.emit($newLevel) {
+      @content;
+    }
+
+    $void: process.end();
+  }
+}
+
+/// Creates compound selectors like .<selector1>.<selector2>
+@mixin compound-entity($args...) {
+  @include linked-entities($separator: "", $args...) {
+    @content;
+  }
+}
+
+/// Creates descendant selectors like .<selector1> .<selector2>
+@mixin descendant-entity($args...) {
+  @include linked-entities($separator: " ", $args...) {
+    @content;
+  }
+}
+
+/// Creates component selectors like .myBlock--previousModifier.myBlock--compoundModifier
+@mixin compound-block-modifier($modifier) {
+  $typeAndName: (
+    "type": "modifier",
+    "name": $modifier,
+  );
+
+  @include compound-entity($typeAndName, $block: true) {
+    @content;
+  }
+}
+
+/// Copies closest modifier and apppends an element to it and appends selector as a descendant
+/// @include modifier('element-sibling-modifier') {
+///     @include descendant-modifier-element('compound-element') {
+///       @content;
+///     }
+///  }
+/// Results in
+/// <parent>--element-sibling-modifier <parent>--element-sibling-modifier__compound-element
+@mixin descendant-modifier-element($element, $modifier: true) {
+  $typeAndName: (
+    "type": "element",
+    "name": $element,
+  );
+
+  @include descendant-entity($typeAndName, $modifier: $modifier) {
+    @content;
+  }
+}
+
+/// Creates a element for the closest block. Can be called inside any entity.
+/// Calling it inside "modifier":
+
+/// @include modifier('modifier') {
+///   @include block-element('block-element')
+
+/// Results in
+/// <parent>--modifier <parent>__block-element
+@mixin block-element($element, $block: true) {
+  $typeAndName: (
+    "type": "element",
+    "name": $element,
+  );
+
+  @include descendant-entity($typeAndName, $block: $block) {
+    @content;
+  }
+}
+
+/// Finds the closest entity that matches $args and repeats its selector again
+@mixin repeat($args...) {
+  $closest: levels.find-closest-in-current($args...);
+
+  @if $closest {
+    $selector: levels.get-level-selector($closest);
+    $createdLevel: process.start(
+      $custom: $selector,
+    );
+    $createdLevel: levels.set-level-emit-target-to-nested($createdLevel);
+
+    @include output.emit($createdLevel) {
+      @content;
+    }
+
+    $void: process.end();
+  }
+}
+
+/// Finds the closest entity that matches $args and repeats its selector with given replacer
+/// <parent> with @include repeat-with-replace($original: '-test', $replacement: '-replacement', $block: true) {
+/// Results in <parent>.replacement {}
+@mixin repeat-with-replace($original, $replacement, $args...) {
+  $closest: levels.find-closest-in-current($args...);
+
+  @if $closest {
+    $selector: levels.get-level-selector($closest);
+    $editedSelector: helpers.replace-string($selector, $original, $replacement);
+
+    @include coreEntities.custom($editedSelector) {
+      @content;
+    }
+  }
+}

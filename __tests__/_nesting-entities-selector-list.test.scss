@@ -1,0 +1,75 @@
+@use "sass-true" as *;
+// using index so that we can test the whole process and no need to test it separately
+@use "../index" as *;
+@mixin testSCSS($elements: true) {
+  @include multi-sass($modifiers: true, $extras: true, $elements: $elements, $block: "block-name") {
+    a {
+      @include selector-list((("custom": ":focus"), ("custom": ":hover"))) {
+        --a-focus: var(--var-a-focus);
+        --a-hover: var(--var-a-hover);
+      }
+    }
+    div.class {
+      @include selector-list(
+        (("modifier": "mod1"), ("modifier": "mod2"), ("element": "el"), ("block": "block"), ("custom": "#custom"))
+      ) {
+        --root-selector-list: var(--root-selector-list);
+      }
+    }
+    div {
+      @include block {
+        @include selector-list(
+          (("modifier": "mod1"), ("modifier": "mod2"), ("element": "el"), ("block": "block"), ("custom": "#custom"))
+        ) {
+          --root-selector-list: var(--root-selector-list);
+        }
+      }
+    }
+
+    .wrapper {
+      --wrapper-class: var(--var-wrapper-class);
+      @include extra("in-wrapper") {
+        --wrapper: var(--var-wrapper);
+      }
+    }
+  }
+}
+
+@include describe("selector-list() accepts a list of mapped entities and outputs list of selectors repeating parents") {
+  @include it("are all outputted.") {
+    @include assert {
+      @include output {
+        @include testSCSS;
+      }
+
+      @include expect {
+        a:focus,
+        a:hover {
+          --a-focus: var(--var-a-focus);
+          --a-hover: var(--var-a-hover);
+        }
+
+        div.class--mod1,
+        div.class--mod2,
+        div.class__el,
+        div.class.block,
+        div.class#custom {
+          --root-selector-list: var(--root-selector-list);
+        }
+
+        div .block-name--mod1,
+        div .block-name--mod2,
+        div .block-name__el,
+        div .block-name.block,
+        div .block-name#custom {
+          --root-selector-list: var(--root-selector-list);
+        }
+
+        .wrapper {
+          --wrapper-class: var(--var-wrapper-class);
+          --wrapper: var(--var-wrapper);
+        }
+      }
+    }
+  }
+}

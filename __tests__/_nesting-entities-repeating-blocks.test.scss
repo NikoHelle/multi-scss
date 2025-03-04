@@ -1,0 +1,107 @@
+@use "sass-true" as *;
+// using index so that we can test the whole process and no need to test it separately
+@use "../index" as *;
+
+@include describe("repeat() ") {
+  @include it("Finds the closest entity that matches $args and repeats its selector again") {
+    @include assert {
+      @include output {
+        @include multi-sass($modifiers: true, $extras: true, $elements: true, $block: "block-name") {
+          div.class {
+            @include block() {
+              --block-element: var(--var-block-element);
+              @include repeat($block: true) {
+                --repeated-block-element: var(--var-repeated-block-element);
+              }
+            }
+          }
+          div.class {
+            @include modifier("mod1") {
+              --modifier-mod1: var(--var-modifier-mod1);
+              @include repeat($modifier: "mod1") {
+                --repeated-modifier-element: var(--var-repeated-modifier-element);
+              }
+            }
+          }
+          div.class {
+            @include element("el1") {
+              --element-el1: var(--var-element-el1);
+              @include repeat($element: "el1") {
+                --repeated-element: var(--var-repeated-element);
+              }
+            }
+          }
+          div.class {
+            @include custom(".class#name") {
+              --custom-div: var(--var-custom-div);
+              @include repeat($custom: ".class#name") {
+                --repeated-custom: var(--var-repeated-custom);
+              }
+            }
+          }
+        }
+      }
+
+      @include expect {
+        div.class .block-name {
+          --block-element: var(--var-block-element);
+        }
+        div.class .block-name .block-name {
+          --repeated-block-element: var(--var-repeated-block-element);
+        }
+
+        div.class--mod1 {
+          --modifier-mod1: var(--var-modifier-mod1);
+        }
+
+        div.class--mod1 --mod1 {
+          --repeated-modifier-element: var(--var-repeated-modifier-element);
+        }
+
+        div.class__el1 {
+          --element-el1: var(--var-element-el1);
+        }
+
+        div.class__el1 __el1 {
+          --repeated-element: var(--var-repeated-element);
+        }
+        div.class.class#name {
+          --custom-div: var(--var-custom-div);
+        }
+
+        div.class.class#name .class#name {
+          --repeated-custom: var(--var-repeated-custom);
+        }
+      }
+    }
+  }
+}
+@include describe("repeat-with-replace() ") {
+  @include it(
+    "Finds the closest entity that matches $args... and repeats its selector again and replaces strings in the selector. The entity is custom, so it is a compound selector"
+  ) {
+    @include assert {
+      @include output {
+        @include multi-sass($modifiers: true, $extras: true, $elements: true, $block: "block-name") {
+          div.class {
+            @include block() {
+              --block-element: var(--var-block-element);
+              @include repeat-with-replace("-name", " ", $block: true) {
+                --replaced-block-element: var(--var-replaced-block-element);
+              }
+            }
+          }
+        }
+      }
+
+      @include expect {
+        div.class .block-name {
+          --block-element: var(--var-block-element);
+        }
+        div.class .block-name.block {
+          --replaced-block-element: var(--var-replaced-block-element);
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,62 @@
+@use "sass-true" as *;
+@use "sass:meta";
+// using index so that we can test the whole process and no need to test it separately
+@use "../index" as *;
+
+@function custom-selector($ruleMap, $config, $currentLevel) {
+  @return ".my-custom-selector";
+}
+
+@function custom-level($ruleMap, $config, $currentLevel) {
+  @return ("type": "element", "name": "custom-level", "selector": ".my-custom-level-selector");
+}
+
+@mixin testSCSS() {
+  @include multi-sass($modifiers: true, $extras: true, $elements: true, $block: "block-name") {
+    @include block {
+      @include create-custom-selector(meta.get-function("custom-selector")) {
+        --block-custom-selector: var(--var-block-custom-selector);
+      }
+
+      @include create-custom-level(meta.get-function("custom-level")) {
+        --block-custom-level: var(--var-block-custom-level);
+      }
+    }
+
+    @include create-custom-selector(meta.get-function("custom-selector")) {
+      --root-custom-selector: var(--var-root-custom-selector);
+    }
+
+    @include create-custom-level(meta.get-function("custom-level")) {
+      --root-custom-level: var(--var-root-custom-level);
+    }
+  }
+}
+
+@include describe("Custom functions") {
+  @include it("use given functions to create selectors and levels") {
+    @include assert {
+      @include output {
+        @include testSCSS;
+      }
+
+      @include expect {
+        .block-name.my-custom-selector {
+          --block-custom-selector: var(--var-block-custom-selector);
+        }
+
+        .block-name.my-custom-level-selector {
+          --block-custom-level: var(--var-block-custom-level);
+        }
+
+        &.my-custom-selector {
+          --root-custom-selector: var(--var-root-custom-selector);
+        }
+
+        &.my-custom-level-selector {
+          --root-custom-level: var(--var-root-custom-level);
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,328 @@
+@use "sass-true" as *;
+// using index so that we can test the whole process and no need to test it separately
+@use "../index" as *;
+
+@include describe(
+  "linked-entities() finds the closest given entity ( passed as $typeAndName) and and creates a level with selector <target selector><separator>level.selector"
+) {
+  @include it("block is detected and a new modifier is linked to it as a descendant when separator is a space") {
+    @include assert {
+      @include output {
+        @include multi-sass($modifiers: true, $extras: true, $elements: true, $block: "block-name") {
+          div {
+            @include block {
+              --block-entity: var(--var-block-entity);
+              @include modifier("mod1") {
+                --block-mod1: var(--var-block-mod1);
+
+                @include linked-entities(
+                  $typeAndName: (
+                    type: "modifier",
+                    name: "mod2",
+                  ),
+                  $separator: " ",
+                  $block: true
+                ) {
+                  --linked-entity-mod2: var(--var-linked-entity-mod2);
+                }
+              }
+            }
+          }
+        }
+      }
+
+      @include expect {
+        div .block-name {
+          --block-entity: var(--var-block-entity);
+        }
+
+        div .block-name--mod1 {
+          --block-mod1: var(--var-block-mod1);
+        }
+
+        div .block-name--mod1 .block-name--mod2 {
+          --linked-entity-mod2: var(--var-linked-entity-mod2);
+        }
+      }
+    }
+  }
+  @include it("modifiers are detected and a new entity can be linked directly when separator is empty") {
+    @include assert {
+      @include output {
+        @include multi-sass($modifiers: true, $extras: true, $elements: true, $block: "block-name") {
+          span.class {
+            @include modifier("parent-mod") {
+              --parent-mod: var(--var-parent-mod);
+              @include modifier("child-mod") {
+                --child-mod: var(--var-child-mod);
+
+                @include linked-entities(
+                  $typeAndName: (
+                    type: "modifier",
+                    name: "linked-to-parent-mod",
+                  ),
+                  $separator: "",
+                  $modifier: "parent-mod"
+                ) {
+                  --linked-to-parent-mod: var(--var-linked-to-parent-mod);
+                }
+                @include linked-entities(
+                  $typeAndName: (
+                    type: "element",
+                    name: "linked-to-child-element",
+                  ),
+                  $separator: "",
+                  $modifier: "child-mod"
+                ) {
+                  --linked-to-child-element: var(--var-linked-to-child-element);
+                }
+              }
+            }
+          }
+        }
+      }
+
+      @include expect {
+        span.class--parent-mod {
+          --parent-mod: var(--var-parent-mod);
+        }
+        span.class--parent-mod--child-mod {
+          --child-mod: var(--var-child-mod);
+        }
+        span.class--parent-mod--child-mod--parent-mod--linked-to-parent-mod {
+          --linked-to-parent-mod: var(--var-linked-to-parent-mod);
+        }
+        span.class--parent-mod--child-mod--parent-mod--child-mod__linked-to-child-element {
+          --linked-to-child-element: var(--var-linked-to-child-element);
+        }
+      }
+    }
+  }
+  @include it("elements and custom entities are detected and a new element can be linked") {
+    @include assert {
+      @include output {
+        @include multi-sass($modifiers: true, $extras: true, $elements: true, $block: "block-name") {
+          section {
+            @include custom(".custom") {
+              --custom: var(--var-custom);
+              @include element("element") {
+                --element: var(--var-element);
+
+                @include linked-entities(
+                  $typeAndName: (
+                    type: "custom",
+                    name: ".custom-class",
+                  ),
+                  $separator: "",
+                  $element: "element"
+                ) {
+                  --linked-to-element: var(--var-linked-to-element);
+                }
+                @include linked-entities(
+                  $typeAndName: (
+                    type: "custom",
+                    name: ".custom-class-again",
+                  ),
+                  $separator: " ",
+                  $custom: ".custom"
+                ) {
+                  --linked-to-custom: var(--var-linked-to-custom);
+                }
+              }
+            }
+          }
+        }
+      }
+
+      @include expect {
+        section.custom {
+          --custom: var(--var-custom);
+        }
+
+        section.custom__element {
+          --element: var(--var-element);
+        }
+
+        section.custom__element.custom__element.custom-class {
+          --linked-to-element: var(--var-linked-to-element);
+        }
+        section.custom__element .custom.custom-class-again {
+          --linked-to-custom: var(--var-linked-to-custom);
+        }
+      }
+    }
+  }
+  @include it("nothing is added if target is not found") {
+    @include assert {
+      @include output {
+        @include multi-sass($modifiers: true, $extras: true, $elements: true, $block: "block-name") {
+          @include linked-entities(
+            $typeAndName: (
+              type: "element",
+              name: "linked-to-child-element",
+            ),
+            $separator: "",
+            $block: true
+          ) {
+            --linked-to-child-element: var(--var-linked-to-child-element);
+          }
+          span.class {
+            @include modifier("child-mod") {
+              --child-mod: var(--var-child-mod);
+
+              @include linked-entities(
+                $typeAndName: (
+                  type: "modifier",
+                  name: "linked-to-parent-mod",
+                ),
+                $separator: "",
+                $modifier: "not-found"
+              ) {
+                --linked-to-parent-mod: var(--var-linked-to-parent-mod);
+              }
+            }
+          }
+        }
+      }
+
+      @include expect {
+        span.class--child-mod {
+          --child-mod: var(--var-child-mod);
+        }
+      }
+    }
+  }
+}
+
+@include describe("compound-entity() ") {
+  @include it("calls linked-entities() with same args, but the separator is fixed to empty string") {
+    @include assert {
+      @include output {
+        @include multi-sass($modifiers: true, $extras: true, $elements: true, $block: "block-name") {
+          div {
+            @include block {
+              @include compound-entity(
+                $typeAndName: (
+                  type: "modifier",
+                  name: "mod2",
+                ),
+                $block: true
+              ) {
+                --linked-entity-mod2: var(--var-linked-entity-mod2);
+              }
+            }
+          }
+        }
+      }
+
+      @include expect {
+        div .block-name.block-name--mod2 {
+          --linked-entity-mod2: var(--var-linked-entity-mod2);
+        }
+      }
+    }
+  }
+}
+
+@include describe("descendant-entity() ") {
+  @include it("calls linked-entities() with same args, but the separator is a space") {
+    @include assert {
+      @include output {
+        @include multi-sass($modifiers: true, $extras: true, $elements: true, $block: "block-name") {
+          div {
+            @include block {
+              @include descendant-entity(
+                $typeAndName: (
+                  type: "modifier",
+                  name: "mod2",
+                ),
+                $block: true
+              ) {
+                --linked-entity-mod2: var(--var-linked-entity-mod2);
+              }
+            }
+          }
+        }
+      }
+
+      @include expect {
+        div .block-name .block-name--mod2 {
+          --linked-entity-mod2: var(--var-linked-entity-mod2);
+        }
+      }
+    }
+  }
+}
+@include describe("compound-block-modifier() ") {
+  @include it("calls compound-entity() with preset typeAndName for modifiers and targets only blocks") {
+    @include assert {
+      @include output {
+        @include multi-sass($modifiers: true, $extras: true, $elements: true, $block: "block-name") {
+          section {
+            div {
+              @include block() {
+                @include compound-block-modifier("mod1") {
+                  --linked-child-mod1: var(--var-linked-child-mod1);
+                }
+              }
+            }
+          }
+        }
+      }
+
+      @include expect {
+        section div .block-name.block-name--mod1 {
+          --linked-child-mod1: var(--var-linked-child-mod1);
+        }
+      }
+    }
+  }
+}
+@include describe("descendant-modifier-element() ") {
+  @include it("calls compound-entity() with preset typeAndName for elements and targets only modifiers") {
+    @include assert {
+      @include output {
+        @include multi-sass($modifiers: true, $extras: true, $elements: true, $block: "block-name") {
+          section {
+            div.class {
+              @include modifier("mod1") {
+                @include descendant-modifier-element("element") {
+                  --linked-mod1-element: var(--var-linked-mod1-element);
+                }
+              }
+            }
+          }
+        }
+      }
+
+      @include expect {
+        section div.class--mod1 --mod1__element {
+          --linked-mod1-element: var(--var-linked-mod1-element);
+        }
+      }
+    }
+  }
+}
+@include describe("block-element() ") {
+  @include it("calls compound-entity() with preset typeAndName for elements and targets only blocks") {
+    @include assert {
+      @include output {
+        @include multi-sass($modifiers: true, $extras: true, $elements: true, $block: "block-name") {
+          div.class {
+            @include block() {
+              @include block-element("element") {
+                --linked-block-element: var(--var-linked-block-element);
+              }
+            }
+          }
+        }
+      }
+
+      @include expect {
+        div.class .block-name .block-name__element {
+          --linked-block-element: var(--var-linked-block-element);
+        }
+      }
+    }
+  }
+}

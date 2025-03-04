@@ -140,4 +140,119 @@
     @include assert-equal(list.length($levels), 0);
     $void: after-each();
   }
+  @include describe("emitContentOnlychanges how root css is emitted") {
+    @include it("with value null, output is normal") {
+      @include assert {
+        @include output {
+          @include TestMixins.TestEmitContentOnly;
+        }
+        @include expect {
+          .myBlock {
+            --block: var(--var-block);
+          }
+
+          .myBlock__content {
+            --element-content: var(--var-element-content);
+          }
+
+          .myBlock--modifier {
+            --modifier-content: var(--var-modifier-content);
+          }
+
+          .myBlock--modifier__content {
+            --modifier-element-content: var(--var-modifier-element-content);
+          }
+
+          .myBlock div {
+            --block-div: var(--var-block-div);
+          }
+
+          div {
+            --root-div: var(--var-root-div);
+          }
+        }
+      }
+    }
+    @include it("with value 'all', all rules are outputted to parent/wrapper") {
+      @include assert {
+        @include output {
+          .wrapper {
+            @include TestMixins.TestEmitContentOnly("all");
+          }
+        }
+        @include expect {
+          .wrapper {
+            --block: var(--var-block);
+            --element-content: var(--var-element-content);
+            --modifier-content: var(--var-modifier-content);
+            --modifier-element-content: var(--var-modifier-element-content);
+          }
+
+          .wrapper div {
+            --block-div: var(--var-block-div);
+          }
+          .wrapper div {
+            --root-div: var(--var-root-div);
+          }
+        }
+      }
+    }
+    @include it("with value 'root', root selectors are not outputted and  all rules are outputted to parent/wrapper") {
+      @include assert {
+        @include output {
+          .wrapper {
+            @include TestMixins.TestEmitContentOnly("root");
+          }
+        }
+        @include expect {
+          .wrapper {
+            --block: var(--var-block);
+          }
+
+          .wrapper__content {
+            --element-content: var(--var-element-content);
+          }
+
+          .wrapper--modifier {
+            --modifier-content: var(--var-modifier-content);
+          }
+
+          .wrapper--modifier__content {
+            --modifier-element-content: var(--var-modifier-element-content);
+          }
+
+          .wrapper div {
+            --block-div: var(--var-block-div);
+          }
+
+          .wrapper div {
+            --root-div: var(--var-root-div);
+          }
+        }
+      }
+    }
+    @include it("rules with emitContentOnly can output any part to new selector.") {
+      @include assert {
+        @include output {
+          .modifier-only {
+            @include TestMixins.TestEmitContentOnly(
+              "all",
+              (
+                modifier: (
+                  "content": false,
+                ),
+              ),
+              false,
+              false
+            );
+          }
+        }
+        @include expect {
+          .modifier-only {
+            --modifier-content: var(--var-modifier-content);
+          }
+        }
+      }
+    }
+  }
 }

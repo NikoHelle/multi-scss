@@ -24,10 +24,10 @@
         --wrapper-span: var(--var-wrapper-span);
       }
       @include block {
-        --hds-test: var(--var-base);
+        --test: var(--var-base);
 
         @include extra("block") {
-          --hds-test-block: var(--var-block);
+          --test-block: var(--var-block);
         }
       }
     }
@@ -59,8 +59,8 @@
         }
 
         .wrapper .block-name {
-          --hds-test: var(--var-base);
-          --hds-test-block: var(--var-block);
+          --test: var(--var-base);
+          --test-block: var(--var-block);
         }
       }
     }
@@ -81,7 +81,7 @@
           --wrapper-span: var(--var-wrapper-span);
         }
         .wrapper .block-name {
-          --hds-test: var(--var-base);
+          --test: var(--var-base);
         }
       }
     }
@@ -105,8 +105,8 @@
         }
 
         .wrapper .block-name {
-          --hds-test: var(--var-base);
-          --hds-test-block: var(--var-block);
+          --test: var(--var-base);
+          --test-block: var(--var-block);
         }
       }
     }
@@ -130,7 +130,7 @@
         }
 
         .wrapper .block-name {
-          --hds-test: var(--var-base);
+          --test: var(--var-base);
         }
       }
     }
