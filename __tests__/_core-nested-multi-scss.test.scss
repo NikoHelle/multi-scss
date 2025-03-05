@@ -1,0 +1,238 @@
+@use "sass-true" as *;
+@use "sass:meta";
+@use "./test-mixins.scss" as *;
+
+@include describe("When there is multiple nested multi-sass mixings") {
+  @include it("the passed config is correctly applied") {
+    @include assert {
+      @include output {
+        @include ComplexInnerBlocks;
+      }
+
+      @include expect {
+        .block-name {
+          --block: var(--var-block);
+        }
+
+        .block-name div {
+          --block-div: var(--var-block-div);
+        }
+
+        .block-name {
+          --block2: var(--var-block2);
+        }
+
+        .block-name.block-name {
+          --block2-inner-block: var(--var-block2-inner-block);
+        }
+
+        .block-name.block-name div {
+          --block2-div: var(--var-block2-div);
+        }
+
+        .block-name ul li.block-name {
+          --ul-li-block3: var(--var-ul-li-block3);
+        }
+
+        .block-name ul li.block-name a {
+          --ul-li-block3-a: var(--var-ul-li-block3-a);
+        }
+
+        .block-name ul li.block-name a.block-name {
+          --ul-li-block3-a-block4: var(--ul-li-block3-a-block4);
+        }
+
+        .block-name ul li.block-name a.block-name span {
+          --ul-li-block3-a-block4-span: var(--ul-li-block3-a-block4-span);
+        }
+      }
+    }
+  }
+}
+
+@include describe("Nested multi-sass mixings") {
+  @include it("are outputted with passed configs") {
+    @include assert {
+      @include output {
+        @include SimpleContainer(
+          $config: (
+            "blockPrefix": "",
+            "modifierDelimeter": "-__-",
+            "elementDelimeter": "_--_",
+          )
+        ) {
+          @include SimpleButton(
+            $config: (
+              "blockPrefix": "btn-prefix-",
+              "modifierDelimeter": "----",
+              "elementDelimeter": "____",
+            )
+          );
+          @include SimpleContainer(
+            $config: (
+              "blockPrefix": "block-",
+            )
+          );
+        }
+      }
+
+      @include expect {
+        section .simple-container {
+          --simple-container-base: var(--var-simple-container-base);
+        }
+
+        section .simple-container_--_content {
+          --simple-container-content: var(--var-simple-container-content);
+        }
+
+        section .simple-container-__-tiny {
+          --simple-container-dark: var(--var-simple-container-tiny);
+        }
+
+        section .simple-container-__-tiny_--_content {
+          --simple-container-tiny-content: var(--var-simple-container-tiny-content);
+        }
+
+        section .simple-container button .btn-prefix-simple-button {
+          --simple-button-base: var(--var-simple-button-base);
+        }
+
+        section .simple-container button .btn-prefix-simple-button____icon {
+          --simple-button-icon: var(--var-simple-button-icon);
+        }
+
+        section .simple-container button .btn-prefix-simple-button____icon span {
+          --simple-button-icon-span: var(--var-simple-button-modifier1-icon-span);
+        }
+
+        section .simple-container button .btn-prefix-simple-button----dark {
+          --simple-button-dark: var(--var-simple-button-dark);
+        }
+
+        section .simple-container button .btn-prefix-simple-button----dark____icon {
+          --simple-button-dark-icon: var(--var-simple-button-dark-icon);
+        }
+
+        section .simple-container button .btn-prefix-simple-button----dark____icon span {
+          --simple-button-dark-icon-span: var(--var-simple-button-dark-icon-span);
+        }
+
+        section .simple-container section .block-simple-container {
+          --simple-container-base: var(--var-simple-container-base);
+        }
+
+        section .simple-container section .block-simple-container__content {
+          --simple-container-content: var(--var-simple-container-content);
+        }
+
+        section .simple-container section .block-simple-container--tiny {
+          --simple-container-dark: var(--var-simple-container-tiny);
+        }
+
+        section .simple-container section .block-simple-container--tiny__content {
+          --simple-container-tiny-content: var(--var-simple-container-tiny-content);
+        }
+
+        section .simple-container section .block-simple-container--max {
+          --simple-container-max: var(--var-simple-container-max);
+        }
+
+        section .simple-container section .block-simple-container--max__content {
+          --simple-container-max-content: var(--var-simple-container-max-content);
+        }
+
+        section .simple-container-__-max {
+          --simple-container-max: var(--var-simple-container-max);
+        }
+
+        section .simple-container-__-max_--_content {
+          --simple-container-max-content: var(--var-simple-container-max-content);
+        }
+      }
+    }
+  }
+
+  @include it("rules apply to given blocks") {
+    @include assert {
+      @include output {
+        @include SimpleContainer(
+          $config: (
+            "blockPrefix": "level1-",
+          ),
+          $elements: false
+        ) {
+          @include SimpleContainer(
+            $config: (
+              "blockPrefix": "level2-",
+            ),
+            $modifiers: "max"
+          ) {
+            @include SimpleContainer(
+              $config: (
+                "blockPrefix": "level3-",
+              ),
+              $modifiers: (
+                "tiny": true,
+              )
+            );
+          }
+        }
+      }
+
+      @include expect {
+        section .level1-simple-container--tiny {
+          --simple-container-dark: var(--var-simple-container-tiny);
+        }
+
+        section .level1-simple-container--tiny__content {
+          --simple-container-tiny-content: var(--var-simple-container-tiny-content);
+        }
+
+        section .level1-simple-container section .level2-simple-container {
+          --simple-container-base: var(--var-simple-container-base);
+        }
+
+        section .level1-simple-container section .level2-simple-container__content {
+          --simple-container-content: var(--var-simple-container-content);
+        }
+
+        section .level1-simple-container section .level2-simple-container section .level3-simple-container {
+          --simple-container-base: var(--var-simple-container-base);
+        }
+
+        section .level1-simple-container section .level2-simple-container section .level3-simple-container__content {
+          --simple-container-content: var(--var-simple-container-content);
+        }
+
+        section .level1-simple-container section .level2-simple-container section .level3-simple-container--tiny {
+          --simple-container-dark: var(--var-simple-container-tiny);
+        }
+
+        section
+          .level1-simple-container
+          section
+          .level2-simple-container
+          section
+          .level3-simple-container--tiny__content {
+          --simple-container-tiny-content: var(--var-simple-container-tiny-content);
+        }
+
+        section .level1-simple-container section .level2-simple-container--max {
+          --simple-container-max: var(--var-simple-container-max);
+        }
+
+        section .level1-simple-container section .level2-simple-container--max__content {
+          --simple-container-max-content: var(--var-simple-container-max-content);
+        }
+
+        section .level1-simple-container--max {
+          --simple-container-max: var(--var-simple-container-max);
+        }
+
+        section .level1-simple-container--max__content {
+          --simple-container-max-content: var(--var-simple-container-max-content);
+        }
+      }
+    }
+  }
+}
