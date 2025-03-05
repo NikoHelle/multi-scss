@@ -1,0 +1,94 @@
+@use "sass-true" as *;
+@use "../index" as *;
+@use "../globals" as globals;
+
+@mixin testSCSS($elements: true, $modifiers: true, $extras: true, $alias: $alias) {
+  @include multi-sass(
+    $modifiers: true,
+    $extras: true,
+    $elements: true,
+    $block: "myBlock",
+    $alias: $alias,
+    $config: (
+      "blockPrefix": "",
+    )
+  ) {
+    @include block {
+      --test: var(--var-base);
+
+      @include element("element") {
+        --test-element: var(--var-element);
+
+        @include modifier("dark") {
+          --test-element-dark: var(--var-element-dark);
+        }
+      }
+
+      @include modifier("light") {
+        --test-light-modifier: var(--var-light-modifier);
+
+        @include element("element") {
+          --test-element: var(--var-element);
+
+          span {
+            --test-light-modifier-span: var(--var-light-modifier-span);
+          }
+        }
+      }
+    }
+  }
+}
+
+@include describe("If alias is defined,") {
+  @include it("Entities are renamed") {
+    @include assert {
+      @include output {
+        @include testSCSS(
+          $modifiers: (
+            "dark": (
+              "element": true,
+            ),
+            "light": (
+              "element": true,
+            ),
+          ),
+          $elements: (
+            "base": true,
+            "element": true,
+          ),
+          $alias: (
+            "dark": "really-dark",
+            "element": "nice-element",
+            "light": "ultra-light",
+          )
+        );
+      }
+
+      @include expect {
+        .myBlock {
+          --test: var(--var-base);
+        }
+
+        .myBlock .nice-element {
+          --test-element: var(--var-element);
+        }
+
+        .myBlock .nice-element.really-dark {
+          --test-element-dark: var(--var-element-dark);
+        }
+
+        .myBlock.ultra-light {
+          --test-light-modifier: var(--var-light-modifier);
+        }
+
+        .myBlock.ultra-light .nice-element {
+          --test-element: var(--var-element);
+        }
+
+        .myBlock.ultra-light .nice-element span {
+          --test-light-modifier-span: var(--var-light-modifier-span);
+        }
+      }
+    }
+  }
+}
