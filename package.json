@@ -1,8 +1,8 @@
 {
-  "name": "multi-sass",
-  "version": "1.0.0",
-  "description": "Library to output required partials of a sass file",
-  "homepage": "https://github.com/NikoHelle/multi-sass",
+  "name": "multi-scss",
+  "version": "0.9.0",
+  "description": "This library was developed for a need to publish stylesheets in multi-purpose environments with a need to pick only certain styles of a component or all styles. And partials of nested component styles. In some cases, also selector renaming is required and merging with parent elements.",
+  "homepage": "https://github.com/NikoHelle/multi-scss",
   "license": "MIT",
   "main": "",
   "scripts": {
