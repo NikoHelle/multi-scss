@@ -1,5 +1,6 @@
 @use "sass-true" as *;
 @use "../_core-funcs" as coreFuncs;
+@use "_test-mixins" as TestMixins;
 @use "../globals" as globals;
 @use "../helpers" as helpers;
 @use "../rules" as rules;
@@ -79,22 +80,22 @@
     $void: after-each();
   }
 
-  @include it("multi-scss mixin calls init-multi-sass and end-multi-sass and emits content ") {
+  @include it("multi-sass mixin calls init-multi-sass and end-multi-sass and emits content ") {
     $args: (
       "block": "test-block",
     );
     @include assert {
       @include output {
-        @include coreFuncs.multi-scss($args...) {
+        @include coreFuncs.multi-sass($args...) {
           div {
-            --multi-scss: var(--var-multi-scss);
+            --multi-sass: var(--var-multi-sass);
           }
         }
       }
 
       @include expect {
         div {
-          --multi-scss: var(--var-multi-scss);
+          --multi-sass: var(--var-multi-sass);
         }
       }
     }
@@ -139,5 +140,120 @@
     $levels: globals.get-multi-sass-levels();
     @include assert-equal(list.length($levels), 0);
     $void: after-each();
+  }
+  @include describe("emitContentOnlychanges how root css is emitted") {
+    @include it("with value null, output is normal") {
+      @include assert {
+        @include output {
+          @include TestMixins.TestEmitContentOnly;
+        }
+        @include expect {
+          .hds-myBlock {
+            --block: var(--var-block);
+          }
+
+          .hds-myBlock__content {
+            --element-content: var(--var-element-content);
+          }
+
+          .hds-myBlock--modifier {
+            --modifier-content: var(--var-modifier-content);
+          }
+
+          .hds-myBlock--modifier__content {
+            --modifier-element-content: var(--var-modifier-element-content);
+          }
+
+          .hds-myBlock div {
+            --block-div: var(--var-block-div);
+          }
+
+          div {
+            --root-div: var(--var-root-div);
+          }
+        }
+      }
+    }
+    @include it("with value 'all', all rules are outputted to parent/wrapper") {
+      @include assert {
+        @include output {
+          .wrapper {
+            @include TestMixins.TestEmitContentOnly("all");
+          }
+        }
+        @include expect {
+          .wrapper {
+            --block: var(--var-block);
+            --element-content: var(--var-element-content);
+            --modifier-content: var(--var-modifier-content);
+            --modifier-element-content: var(--var-modifier-element-content);
+          }
+
+          .wrapper div {
+            --block-div: var(--var-block-div);
+          }
+          .wrapper div {
+            --root-div: var(--var-root-div);
+          }
+        }
+      }
+    }
+    @include it("with value 'root', root selectors are not outputted and  all rules are outputted to parent/wrapper") {
+      @include assert {
+        @include output {
+          .wrapper {
+            @include TestMixins.TestEmitContentOnly("root");
+          }
+        }
+        @include expect {
+          .wrapper {
+            --block: var(--var-block);
+          }
+
+          .wrapper__content {
+            --element-content: var(--var-element-content);
+          }
+
+          .wrapper--modifier {
+            --modifier-content: var(--var-modifier-content);
+          }
+
+          .wrapper--modifier__content {
+            --modifier-element-content: var(--var-modifier-element-content);
+          }
+
+          .wrapper div {
+            --block-div: var(--var-block-div);
+          }
+
+          .wrapper div {
+            --root-div: var(--var-root-div);
+          }
+        }
+      }
+    }
+    @include it("rules with emitContentOnly can output any part to new selector.") {
+      @include assert {
+        @include output {
+          .modifier-only {
+            @include TestMixins.TestEmitContentOnly(
+              "all",
+              (
+                modifier: (
+                  "content": false,
+                ),
+              ),
+              false,
+              false
+            );
+          }
+        }
+        @include expect {
+          .modifier-only {
+            --modifier-content: var(--var-modifier-content);
+          }
+        }
+      }
+    }
   }
 }

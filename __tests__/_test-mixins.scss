@@ -11,6 +11,7 @@
 
       @include modifier("modifier1") {
         --simple-block-modifier1: var(--var-simple-block-modifier1);
+        --simple-block-modifier1: var(--var-simple-block-modifier1);
 
         @include element("element1") {
           --simple-block-modifier1-element1: var(--var-simple-block-modifier1-element1);
