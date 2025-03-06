@@ -1,5 +1,6 @@
 @use "sass-true" as *;
 @use "../_core-funcs" as coreFuncs;
+@use "_test-mixins" as TestMixins;
 @use "../globals" as globals;
 @use "../helpers" as helpers;
 @use "../rules" as rules;
@@ -79,22 +80,22 @@
     $void: after-each();
   }
 
-  @include it("multi-scss mixin calls init-multi-sass and end-multi-sass and emits content ") {
+  @include it("multi-sass mixin calls init-multi-sass and end-multi-sass and emits content ") {
     $args: (
       "block": "test-block",
     );
     @include assert {
       @include output {
-        @include coreFuncs.multi-scss($args...) {
+        @include coreFuncs.multi-sass($args...) {
           div {
-            --multi-scss: var(--var-multi-scss);
+            --multi-sass: var(--var-multi-sass);
           }
         }
       }
 
       @include expect {
         div {
-          --multi-scss: var(--var-multi-scss);
+          --multi-sass: var(--var-multi-sass);
         }
       }
     }
