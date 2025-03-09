@@ -207,7 +207,6 @@
     $levels: [];
     $config: (
       "blockName": "blockName",
-      "rootSelector": "rootSelector",
       "blockPrefix": "blockPrefix",
       "modifierDelimeter": "modifierDelimeter",
       "elementDelimeter": "elementDelimeter",
@@ -226,7 +225,6 @@
 
     $argsConfig: (
       "blockName": "blockNameTest",
-      "rootSelector": "rootSelectorTest",
       "blockPrefix": "blockPrefixTest",
       "modifierDelimeter": "modifierDelimeterTest",
       "elementDelimeter": "elementDelimeterTest",
@@ -243,9 +241,6 @@
 
     @include assert-equal(globals.get-block-name(), map.get($config, "blockName"));
     @include assert-equal(globals.get-block-name($argsConfig), map.get($argsConfig, "blockName"));
-
-    @include assert-equal(globals.get-root-selector(), map.get($config, "rootSelector"));
-    @include assert-equal(globals.get-root-selector($argsConfig), map.get($argsConfig, "rootSelector"));
 
     @include assert-equal(globals.get-modifier-delimeter(), map.get($config, "modifierDelimeter"));
     @include assert-equal(globals.get-modifier-delimeter($argsConfig), map.get($argsConfig, "modifierDelimeter"));

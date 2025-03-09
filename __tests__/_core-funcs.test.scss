@@ -50,7 +50,6 @@
     $result: coreFuncs.init-multi-sass($args...);
     $expectedConfig: (
       "blockName": "test-block",
-      "rootSelector": null,
       "blockPrefix": globals.$BLOCK-PREFIX,
       "modifierDelimeter": globals.$MODIFIER-DELIMETER,
       "elementDelimeter": globals.$ELEMENT-DELIMETER,
