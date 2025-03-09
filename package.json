@@ -1,10 +1,20 @@
 {
-  "name": "multi-scss",
+  "name": "@nikohelle/multi-sass",
   "version": "0.9.0",
   "description": "This library was developed for a need to publish stylesheets in multi-purpose environments with a need to pick only certain styles of a component or all styles. And partials of nested component styles. In some cases, also selector renaming is required and merging with parent elements.",
-  "homepage": "https://github.com/NikoHelle/multi-scss",
+  "homepage": "https://github.com/NikoHelle/multi-sass",
   "license": "MIT",
-  "main": "",
+  "main": "_index.scss",
+  "keywords": [
+    "scss",
+    "sass",
+    "css",
+    "styles",
+    "stylesheet",
+    "multi",
+    "multi-purpose",
+    "partial"
+  ],
   "scripts": {
     "lint": "yarn stylelint \"*.scss\"",
     "test": "jest --config __tests__/jest.config.js"
