@@ -18,7 +18,6 @@
 
 @function init-multi-sass($args...) {
   $argMap: helpers.arg-list-to-map($args...);
-  $rootSelector: null;
   $rules: rules.rules-to-map($argMap);
   $levels: [];
   $blockName: map.get($argMap, "block");
@@ -27,7 +26,6 @@
   $config: map.merge(
     (
       "blockName": $blockName,
-      "rootSelector": $rootSelector,
       "blockPrefix": globals.$BLOCK-PREFIX,
       "modifierDelimeter": globals.$MODIFIER-DELIMETER,
       "elementDelimeter": globals.$ELEMENT-DELIMETER,

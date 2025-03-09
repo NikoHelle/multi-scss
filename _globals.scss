@@ -209,12 +209,6 @@ $EMIT_CONTENT_ONLY_ALL: "all";
   @return get-config-value("blockName", $config);
 }
 
-/// Returns the "rootSelector" from the config of the current controller
-
-@function get-root-selector($config: null) {
-  @return get-config-value("rootSelector", $config);
-}
-
 /// Returns the "modifierDelimeter" from the config of the current controller
 
 @function get-modifier-delimeter($config: null) {
