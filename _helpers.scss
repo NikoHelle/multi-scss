@@ -153,3 +153,25 @@
 
   @return map.get($assumedMap, $name);
 }
+
+@function nullify-value-if-falsy($value) {
+  @return if(can-value-be-truthy($value), $value, null);
+}
+
+@function list-to-string($list) {
+  @if meta.type-of($list) != "list" {
+    @return "";
+  }
+
+  $result: "";
+  $len: list.length($list);
+  @for $i from 1 through $len {
+    $item: list.nth($list, $i);
+    $itemType: meta.type-of($item);
+    @if $itemType != "list" and $itemType != "map" and can-value-be-truthy($item) {
+      $result: "#{$result}#{$item}";
+    }
+  }
+
+  @return $result;
+}
