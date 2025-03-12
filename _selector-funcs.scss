@@ -72,8 +72,8 @@
 
 @function create-level-selector($level, $config) {
   $pipe: (create-prefix($level, $config), create-delimeter($level, $config), create-selector-value($level, $config));
-
-  @return pipe-to-selector(selector-middleware($level, $config, $pipe));
+  $middleWare: globals.get-selector-middleware($config) or meta.get-function("selector-middleware");
+  @return pipe-to-selector(meta.call($middleWare, $level, $config, $pipe));
 }
 
 @function pipe-to-selector($pipe) {

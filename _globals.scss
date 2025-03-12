@@ -253,6 +253,12 @@ $EMIT_CONTENT_ONLY_ALL: "all";
   @return get-config-value("createElementSelector", $config);
 }
 
+/// Returns The "selectorMiddleware" from the config of the current controller
+
+@function get-selector-middleware($config: null) {
+  @return get-config-value("selectorMiddleware", $config);
+}
+
 /// Returns true if the given name matches the BASE_CONTENT_NAME ("base")
 
 @function is-base-name($name) {
