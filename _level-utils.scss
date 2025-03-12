@@ -24,23 +24,6 @@ $EMIT_TARGET_ROOT: "EMIT_TARGET_ROOT";
   @return globals.get-root-selector($config);
 }
 
-@function create-level-selector($config, $level) {
-  $type: get-level-type($level);
-  $name: get-level-name($level);
-
-  @if helpers.can-value-be-falsy($name) and is-block-type($type) {
-    $name: globals.get-block-name($config);
-  }
-
-  $alias: get-level-alias($level, $config);
-
-  @if $alias {
-    @return selectors.create-selector-with-alias($type, $alias);
-  }
-
-  @return selectors.create-selector($type, $name, $config);
-}
-
 @function get-closest-with-name-or-type($level, $type, $name: null, $startFromLevel: false) {
   $nameRequired: helpers.can-value-be-truthy($name) and $name != true;
   $parent: if($startFromLevel, $level, get-level-parent($level));

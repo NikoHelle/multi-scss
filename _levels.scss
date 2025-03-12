@@ -3,7 +3,7 @@
 @use "./globals.scss" as globals;
 @use "./helpers.scss" as helpers;
 @use "./rules.scss" as rules;
-@use "./selectors.scss" as selectors;
+@use "./selector-funcs.scss" as selectorFuncs;
 @use "./level-utils.scss" as levelUtils;
 
 /// Functions to create and update levels and handle their nesting.
@@ -53,7 +53,7 @@
   $level: map.set($level, "contentOnly", $contentOnly);
 
   @if $isAllowed and not $contentOnly {
-    $selector: levelUtils.create-level-selector($config, $level);
+    $selector: selectorFuncs.create-level-selector($level, $config);
   } @else if $isAllowed and levelUtils.is-extra-level($level) and $parent {
     $selector: levelUtils.get-level-selector($parent);
   }

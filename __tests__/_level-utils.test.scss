@@ -115,48 +115,6 @@ $config: ();
     @include assert-equal(levelUtils.get-level-parent-selector($config, create-default-level()), ".parent");
   }
 
-  @include describe("ccreate-level-selector() creates a selector") {
-    @include it("block selector is from name is set") {
-      $level: (
-        "type": "block",
-        "name": "test-block",
-      );
-      @include assert-equal(levelUtils.create-level-selector($config, $level), ".test-block");
-    }
-    @include it("block selector is from config if name is not set") {
-      $level: (
-        "type": "block",
-      );
-      @include assert-equal(
-        levelUtils.create-level-selector(
-          (
-            blockName: "configName",
-          ),
-          $level
-        ),
-        ".configName"
-      );
-    }
-    @include it("alias is used if set") {
-      $level: (
-        "type": "element",
-        "name": "aliasTarget",
-      );
-      @include assert-equal(
-        levelUtils.create-level-selector(
-          (
-            blockName: "configName",
-            alias: (
-              "aliasTarget": "aliasName",
-            ),
-          ),
-          $level
-        ),
-        " .aliasName"
-      );
-    }
-  }
-
   @include describe("get-closest-with-name-or-type() returns the closest matching level") {
     $level: (
       "type": "element",
