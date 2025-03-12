@@ -1,6 +1,7 @@
 @use "sass:meta";
 @use "./globals.scss" as globals;
 @use "./levels.scss" as levels;
+@use "./level-utils.scss" as levelUtils;
 @use "./rules.scss" as rules;
 @use "./helpers.scss" as helpers;
 
@@ -21,7 +22,7 @@
   $rules: globals.get-multi-sass-rules();
   $levels: globals.get-multi-sass-levels();
   $config: globals.get-multi-sass-config();
-  $parent: levels.get-current-level($levels);
+  $parent: levelUtils.get-current-level($levels);
   $newLevel: levels.create-level($rules, $config, $parent, $args...);
 
   @return $newLevel;
@@ -31,7 +32,7 @@
   $rules: globals.get-multi-sass-rules();
   $levels: globals.get-multi-sass-levels();
   $config: globals.get-multi-sass-config();
-  $currentLevel: levels.get-current-level($levels);
+  $currentLevel: levelUtils.get-current-level($levels);
 
   @return ("rules": $rules, "levels": $levels, "config": $config, "currentLevel": $currentLevel);
 }
@@ -39,5 +40,5 @@
 @function get-current-level() {
   $levels: globals.get-multi-sass-levels();
 
-  @return levels.get-current-level($levels);
+  @return levelUtils.get-current-level($levels);
 }

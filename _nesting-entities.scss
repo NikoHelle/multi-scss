@@ -2,7 +2,7 @@
 @use "sass:map";
 @use "sass:meta";
 @use "./globals.scss" as globals;
-@use "./levels.scss" as levels;
+@use "./level-utils.scss" as levelUtils;
 @use "./helpers.scss" as helpers;
 @use "./process.scss" as process;
 @use "./output.scss" as output;
@@ -23,7 +23,7 @@
     $keyAndValue: helpers.get-map-data-with-value($item);
     $type: map.get($keyAndValue, "key");
     $name: map.get($keyAndValue, "value");
-    $levelSelector: levels.get-level-selector($tempLevel);
+    $levelSelector: levelUtils.get-level-selector($tempLevel);
 
     @if $levelSelector {
       @if $selector != "" {
@@ -37,10 +37,10 @@
   $newLevel: process.create-process-level(
     $custom: "> .will-be-overridden",
   );
-  $newLevel: levels.set-level-selector($newLevel, $selector);
+  $newLevel: levelUtils.set-level-selector($newLevel, $selector);
 
   /// Children of this entity should emit nested css:
-  $newLevel: levels.set-level-emit-target-to-nested($newLevel);
+  $newLevel: levelUtils.set-level-emit-target-to-nested($newLevel);
   $void: globals.add-multi-sass-level($newLevel);
 
   @include output.emit($newLevel) {
@@ -55,23 +55,23 @@
 /// Used via other mixins below
 @mixin linked-entities($typeAndName, $separator, $args...) {
   $currentLevel: process.get-current-level();
-  $currentLevelSelector: if($currentLevel, levels.get-level-selector($currentLevel), "&");
-  $closest: levels.find-closest-in-current($args...);
+  $currentLevelSelector: if($currentLevel, levelUtils.get-level-selector($currentLevel), "&");
+  $closest: levelUtils.find-closest-in-current($args...);
   $type: map.get($typeAndName, "type");
   $name: map.get($typeAndName, "name");
 
   @if $closest and $type {
-    $closestSelector: levels.collect-parent-entity-selectors($closest);
+    $closestSelector: levelUtils.collect-parent-entity-selectors($closest);
     $ARGS_MAP: helpers.create-empty-map();
     $ARGS_MAP: map.set($ARGS_MAP, $type, $name);
     $newLevel: process.create-process-level(
       $ARGS_MAP: $ARGS_MAP,
     );
     $selector: selectors.create-selector($type, $name, globals.get-multi-sass-config());
-    $newLevel: levels.set-level-selector($newLevel, "#{$closestSelector}#{$selector}");
+    $newLevel: levelUtils.set-level-selector($newLevel, "#{$closestSelector}#{$selector}");
 
     @if $separator == " " {
-      $newLevel: levels.set-level-emit-target-to-nested($newLevel);
+      $newLevel: levelUtils.set-level-emit-target-to-nested($newLevel);
     }
 
     $void: globals.add-multi-sass-level($newLevel);
@@ -152,14 +152,14 @@
 
 /// Finds the closest entity that matches $args and repeats its selector again
 @mixin repeat($args...) {
-  $closest: levels.find-closest-in-current($args...);
+  $closest: levelUtils.find-closest-in-current($args...);
 
   @if $closest {
-    $selector: levels.get-level-selector($closest);
+    $selector: levelUtils.get-level-selector($closest);
     $createdLevel: process.start(
       $custom: $selector,
     );
-    $createdLevel: levels.set-level-emit-target-to-nested($createdLevel);
+    $createdLevel: levelUtils.set-level-emit-target-to-nested($createdLevel);
 
     @include output.emit($createdLevel) {
       @content;
@@ -173,10 +173,10 @@
 /// <parent> with @include repeat-with-replace($original: '-test', $replacement: '-replacement', $block: true) {
 /// Results in <parent>.replacement {}
 @mixin repeat-with-replace($original, $replacement, $args...) {
-  $closest: levels.find-closest-in-current($args...);
+  $closest: levelUtils.find-closest-in-current($args...);
 
   @if $closest {
-    $selector: levels.get-level-selector($closest);
+    $selector: levelUtils.get-level-selector($closest);
     $editedSelector: helpers.replace-string($selector, $original, $replacement);
 
     @include coreEntities.custom($editedSelector) {

@@ -1,6 +1,6 @@
 @use "sass-true" as *;
 @use "../output" as outputSCSS;
-@use "../levels" as levels;
+@use "../level-utils.scss" as levelUtils;
 @use "sass:meta";
 
 /** NOTE: some "expect" blocks have a preceding "&" which was added to prevent an extra ".test-output" from sass-true appear in the comparison */
@@ -12,7 +12,7 @@
           (
             "isAllowed": true,
             "selector": ".selector",
-            "emitTfarget": levels.$EMIT_TARGET_NESTED,
+            "emitTfarget": levelUtils.$EMIT_TARGET_NESTED,
           )
         ) {
           --content: var(--var-content);
@@ -41,7 +41,7 @@
             (
               "isAllowed": true,
               "selector": ".selector",
-              "emitTfarget": levels.$EMIT_TARGET_NESTED,
+              "emitTfarget": levelUtils.$EMIT_TARGET_NESTED,
             )
           ) {
             --content: var(--var-content);
@@ -76,7 +76,7 @@
             (
               "isAllowed": true,
               "selector": ".selector",
-              "emitTarget": levels.$EMIT_TARGET_NESTED,
+              "emitTarget": levelUtils.$EMIT_TARGET_NESTED,
             )
           ) {
             --content: var(--var-content);
@@ -111,7 +111,7 @@
             (
               "isAllowed": true,
               "selector": ".selector",
-              "emitTarget": levels.$EMIT_TARGET_ROOT,
+              "emitTarget": levelUtils.$EMIT_TARGET_ROOT,
             )
           ) {
             --content: var(--var-content);
@@ -147,7 +147,7 @@
               "isAllowed": true,
               "contentOnly": true,
               "selector": ".selector",
-              "emitTarget": levels.$EMIT_TARGET_NESTED,
+              "emitTarget": levelUtils.$EMIT_TARGET_NESTED,
             )
           ) {
             --content: var(--var-content);
@@ -182,7 +182,7 @@
               "isAllowed": false,
               "contentOnly": true,
               "selector": ".selector",
-              "emitTarget": levels.$EMIT_TARGET_NESTED,
+              "emitTarget": levelUtils.$EMIT_TARGET_NESTED,
             )
           ) {
             --content: var(--var-content);

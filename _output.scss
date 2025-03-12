@@ -1,4 +1,4 @@
-@use "./levels.scss" as levels;
+@use "./level-utils.scss" as levelUtils;
 
 /// Emit css content and selector if not content only.
 /// Emits nothing if level is not allowed.
@@ -6,10 +6,10 @@
 /// @param {string} $level - The level to emit.
 
 @mixin emit($level) {
-  $contentOnly: levels.is-level-content-only($level) or levels.get-level-content-only($level);
-  $isAllowed: levels.is-level-allowed($level);
-  $selector: levels.get-level-selector($level);
-  $shouldEmitNested: levels.should-level-emit-nested($level);
+  $contentOnly: levelUtils.is-level-content-only($level) or levelUtils.get-level-content-only($level);
+  $isAllowed: levelUtils.is-level-allowed($level);
+  $selector: levelUtils.get-level-selector($level);
+  $shouldEmitNested: levelUtils.should-level-emit-nested($level);
 
   @if $isAllowed {
     @if $contentOnly {

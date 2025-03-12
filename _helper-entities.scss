@@ -2,6 +2,7 @@
 @use "sass:map";
 @use "./globals.scss" as globals;
 @use "./levels.scss" as levels;
+@use "./level-utils.scss" as levelUtils;
 
 @use "./helpers.scss" as helpers;
 @use "./process.scss" as process;
@@ -35,7 +36,7 @@
   $ARGS_MAP: map.set($ARGS_MAP, "element", globals.$BASE_CONTENT_NAME);
   $level: levels.create-level-data($currentLevel, $ARGS_MAP);
   $ruleMap: globals.get-multi-sass-rules();
-  $isAllowed: levels.is-level-allowed-in-rules($ruleMap, $level);
+  $isAllowed: levelUtils.is-level-allowed-in-rules($ruleMap, $level);
 
   /// Clear the fake level
   $level: ();
