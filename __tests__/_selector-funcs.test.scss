@@ -1,0 +1,251 @@
+@use "sass-true" as *;
+@use "sass:map";
+@use "sass:meta";
+@use "../core-funcs" as coreFuncs;
+@use "../helpers" as helpers;
+@use "../selector-funcs" as selectorFuncs;
+
+@function create-block($type, $name, $config) {
+  @return '*[data-block="#{$name}"]';
+}
+
+@function create-modifier($type, $name, $config) {
+  @return '*[data-variant="#{$name}"]';
+}
+
+@function create-element($type, $name, $config) {
+  @return '*[data-element="#{$name}"]';
+}
+
+@include describe("_selector-funcs.scss") {
+  @include describe("create-selector()") {
+    @include it("creates a block selector") {
+      $config: helpers.create-empty-map();
+
+      @include assert-equal(
+        selectorFuncs.create-level-selector(
+          (
+            type: "block",
+            name: "blockName",
+          ),
+          $config
+        ),
+        ".blockName"
+      );
+
+      @include assert-equal(
+        selectorFuncs.create-level-selector(
+          (
+            type: "block",
+          ),
+          $config: (blockName: "blockName")
+        ),
+        ".blockName"
+      );
+    }
+
+    @include it("config.blockPrefix is used") {
+      $config: (
+        "blockPrefix": "prefix--",
+      );
+
+      @include assert-equal(
+        selectorFuncs.create-level-selector(
+          (
+            type: "block",
+            name: "blockName",
+          ),
+          $config
+        ),
+        ".prefix--blockName"
+      );
+
+      @include assert-equal(
+        selectorFuncs.create-level-selector(
+          (
+            type: "block",
+            name: "blockName",
+          ),
+          $config
+        ),
+        ".prefix--blockName"
+      );
+    }
+
+    @include it("creates a modifier selector with create-modifier-selector()") {
+      $config: helpers.create-empty-map();
+
+      @include assert-equal(
+        selectorFuncs.create-level-selector(
+          (
+            type: "modifier",
+            name: "modifierName",
+          ),
+          $config
+        ),
+        "modifierName"
+      );
+
+      @include assert-equal(
+        selectorFuncs.create-level-selector(
+          (
+            type: "modifier",
+            name: "modifierName",
+          ),
+          $config
+        ),
+        "modifierName"
+      );
+    }
+
+    @include it("config.modifierDelimeter is used") {
+      $config: (
+        "modifierDelimeter": "----",
+      );
+
+      @include assert-equal(
+        selectorFuncs.create-level-selector(
+          (
+            type: "modifier",
+            name: "modifierName",
+          ),
+          $config
+        ),
+        "----modifierName"
+      );
+
+      @include assert-equal(
+        selectorFuncs.create-level-selector(
+          (
+            type: "modifier",
+            name: "modifierName",
+          ),
+          $config
+        ),
+        "----modifierName"
+      );
+    }
+
+    @include it("creates an element selector with create-element-selector()") {
+      $config: helpers.create-empty-map();
+
+      @include assert-equal(
+        selectorFuncs.create-level-selector(
+          (
+            type: "element",
+            name: "elementName",
+          ),
+          $config
+        ),
+        "elementName"
+      );
+
+      @include assert-equal(
+        selectorFuncs.create-level-selector(
+          (
+            type: "element",
+            name: "elementName",
+          ),
+          $config
+        ),
+        "elementName"
+      );
+    }
+
+    @include it("config.elementDelimeter is used") {
+      $config: (
+        "elementDelimeter": "____",
+      );
+
+      @include assert-equal(
+        selectorFuncs.create-level-selector(
+          (
+            type: "element",
+            name: "elementName",
+          ),
+          $config
+        ),
+        "____elementName"
+      );
+
+      @include assert-equal(
+        selectorFuncs.create-level-selector(
+          (
+            type: "element",
+            name: "elementName",
+          ),
+          $config
+        ),
+        "____elementName"
+      );
+    }
+
+    @include it("creates a custom selector that uses name as selector") {
+      $config: helpers.create-empty-map();
+
+      @include assert-equal(
+        selectorFuncs.create-level-selector(
+          (
+            type: "custom",
+            name: "#div a.b",
+          ),
+          $config
+        ),
+        "#div a.b"
+      );
+    }
+  }
+
+  @include describe("selectors can be renamed with alias and create-selector-with-alias() uses them") {
+    @include it("create-selector-with-alias() creates a simple class selector for aliases") {
+      $config: (
+        "alias": (
+          "element": "alias",
+          "modifier": "alias",
+          "block": "alias",
+          "xxx": "alias",
+        ),
+      );
+      @include assert-equal(
+        selectorFuncs.create-level-selector(
+          (
+            type: "block",
+          ),
+          $config
+        ),
+        "."
+      );
+      @debug "t1";
+      @include assert-equal(
+        selectorFuncs.create-level-selector(
+          (
+            type: "modifier",
+            name: "modifier",
+          ),
+          $config
+        ),
+        ".alias"
+      );
+      @include assert-equal(
+        selectorFuncs.create-level-selector(
+          (
+            type: "element",
+            name: "element",
+          ),
+          $config
+        ),
+        " .alias"
+      );
+      @include assert-equal(
+        selectorFuncs.create-level-selector(
+          (
+            type: "xxx",
+            name: "xxx",
+          ),
+          $config
+        ),
+        "alias"
+      );
+    }
+  }
+}

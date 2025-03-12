@@ -1,0 +1,84 @@
+@use "sass:meta";
+@use "./globals.scss" as globals;
+@use "./level-utils.scss" as levelUtils;
+@use "./helpers.scss" as helpers;
+
+/// Dynamic CSS selector creators
+
+@function create-prefix($level, $config) {
+  $type: levelUtils.get-level-type($level);
+
+  @if levelUtils.is-block-type($type) {
+    $blockPrefix: globals.get-block-prefix($config);
+    @return ".#{$blockPrefix}";
+  }
+
+  @return "";
+}
+
+@function create-selector-value($level, $config) {
+  $name: levelUtils.get-level-name($level);
+  @if helpers.can-value-be-falsy($name) and levelUtils.is-block-type(levelUtils.get-level-type($level)) {
+    $name: globals.get-block-name($config);
+  }
+  @return "#{$name}";
+}
+
+@function create-delimeter($level, $config) {
+  $type: levelUtils.get-level-type($level);
+
+  @if levelUtils.is-modifier-type($type) {
+    $modifierDelimeter: globals.get-modifier-delimeter($config);
+    @return if($modifierDelimeter, $modifierDelimeter, "");
+  }
+  @if levelUtils.is-element-type($type) {
+    $elementDelimeter: globals.get-element-delimeter($config);
+    @return if($elementDelimeter, $elementDelimeter, "");
+  }
+
+  @return "";
+}
+
+@function selector-parser($current, $level, $config) {
+  @return $current;
+}
+
+@function alias-to-selector($level, $alias) {
+  $type: levelUtils.get-level-type($level);
+  $prefix: "";
+
+  @if levelUtils.is-block-type($type) {
+    $prefix: ".";
+  }
+
+  @if levelUtils.is-modifier-type($type) {
+    $prefix: ".";
+  }
+
+  @if levelUtils.is-element-type($type) {
+    $prefix: " .";
+  }
+
+  @return "#{$prefix}#{$alias}";
+}
+
+@function selector-middleware($level, $config, $pipe) {
+  $alias: helpers.nullify-value-if-falsy(levelUtils.get-level-alias($level, $config));
+
+  @return if($alias, alias-to-selector($level, $alias), $pipe);
+}
+
+/// Extra guides to config to know whats?
+
+@function create-level-selector($level, $config) {
+  $pipe: (create-prefix($level, $config), create-delimeter($level, $config), create-selector-value($level, $config));
+
+  @return pipe-to-selector(selector-middleware($level, $config, $pipe));
+}
+
+@function pipe-to-selector($pipe) {
+  @if helpers.is-value-string($pipe) {
+    @return $pipe;
+  }
+  @return helpers.list-to-string($pipe);
+}
