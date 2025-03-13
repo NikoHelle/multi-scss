@@ -1,0 +1,221 @@
+@use "sass:list";
+@use "sass:map";
+@use "sass-true" as *;
+@use "../core-funcs" as coreFuncs;
+
+@use "../migration" as migration;
+@use "../globals" as globals;
+
+/// clear globals etc after each test;
+@function after-each() {
+  $void: globals.update-controllers([]);
+  @return false;
+}
+
+@function create-fake-controller($id) {
+  @return ("ruleMap": "fakeRuleMap-#{$id}", "levels": "fakeLevels-#{$id}", "config": "fakeConfig-#{$id}");
+}
+
+@include describe("_migration.scss") {
+  $ruleMap: ();
+  $levels: [];
+  $defaultConfig: (
+    "info": (
+      "alias": (
+        "value": "config.info.alias",
+      ),
+    ),
+    "alias": (
+      "value": "config.alias",
+    ),
+  );
+  $defaultArgsConfig: (
+    "info": (
+      "alias": (
+        "value": "args-config.info.alias",
+      ),
+    ),
+    "alias": (
+      "value": "args-config.alias",
+    ),
+  );
+  $pipe: ("pipe", "list");
+  @include it("get-alias-from-info() gets named item from  config.info.alias or from passed config") {
+    $newController: globals.store-multi-sass-controller($ruleMap, $levels, $config: $defaultConfig);
+
+    @include assert-equal(migration.get-alias-from-info("value"), "config.info.alias");
+    @include assert-equal(migration.get-alias-from-info("value", $defaultArgsConfig), "args-config.info.alias");
+
+    $void: after-each();
+  }
+  @include it("get-alias-from-info() works with empty config") {
+    $newController: globals.store-multi-sass-controller($ruleMap, $levels, $config: ());
+
+    @include assert-equal(migration.get-alias-from-info("value"), null);
+    @include assert-equal(
+      migration.get-alias-from-info(
+        "value",
+        (
+          "info": null,
+        )
+      ),
+      null
+    );
+    @include assert-equal(
+      migration.get-alias-from-info(
+        "value",
+        (
+          "info": (
+            "alias": (),
+          ),
+        )
+      ),
+      null
+    );
+
+    $void: after-each();
+  }
+  @include it("get-alias-from-config() gets named item from  config.alias or from passed config") {
+    $newController: globals.store-multi-sass-controller($ruleMap, $levels, $config: $defaultConfig);
+
+    @include assert-equal(migration.get-alias-from-config("value"), "config.alias");
+    @include assert-equal(migration.get-alias-from-config("value", $defaultArgsConfig), "args-config.alias");
+
+    $void: after-each();
+  }
+  @include it("get-alias-from-config() works with empty config") {
+    $newController: globals.store-multi-sass-controller($ruleMap, $levels, $config: ());
+
+    @include assert-equal(migration.get-alias-from-config("value"), null);
+    @include assert-equal(
+      migration.get-alias-from-config(
+        "value",
+        (
+          "info": null,
+        )
+      ),
+      null
+    );
+    @include assert-equal(
+      migration.get-alias-from-config(
+        "value",
+        (
+          "info": (
+            "alias": (),
+          ),
+        )
+      ),
+      null
+    );
+
+    $void: after-each();
+  }
+  @include it("alias-to-selector() returns the alias with prefix for the entity. This is clones the old way.") {
+    @include assert-equal(
+      migration.alias-to-selector(
+        (
+          "type": "block",
+          "name": "entity",
+        ),
+        "alias"
+      ),
+      ".alias"
+    );
+    @include assert-equal(
+      migration.alias-to-selector(
+        (
+          "type": "modifier",
+          "name": "entity",
+        ),
+        "alias"
+      ),
+      ".alias"
+    );
+    @include assert-equal(
+      migration.alias-to-selector(
+        (
+          "type": "element",
+          "name": "entity",
+        ),
+        "alias"
+      ),
+      " .alias"
+    );
+    @include assert-equal(
+      migration.alias-to-selector(
+        (
+          "type": "x",
+          "name": "entity",
+        ),
+        "alias"
+      ),
+      "alias"
+    );
+  }
+
+  @include it(
+    "alias-migration-middleware() finds alias from config.info.alias and config.alias and uses alias-to-selector() to return selector "
+  ) {
+    @include assert-equal(
+      migration.alias-migration-middleware(
+        (
+          "type": "block",
+          "name": "entity",
+        ),
+        (
+          "alias": (
+            "entity": "entity-alias",
+          ),
+        ),
+        $pipe
+      ),
+      ".entity-alias"
+    );
+    @include assert-equal(
+      migration.alias-migration-middleware(
+        (
+          "type": "element",
+          "name": "entity",
+        ),
+        (
+          "info": (
+            "alias": (
+              "entity": "entity-info-alias",
+            ),
+          ),
+        ),
+        $pipe
+      ),
+      " .entity-info-alias"
+    );
+  }
+  @include it("alias-migration-middleware() returns passed pipe if alias is not found or entity has no name") {
+    @include assert-equal(
+      migration.alias-migration-middleware(
+        (
+          "type": "element",
+          "name": "entity",
+        ),
+        (),
+        $pipe
+      ),
+      $pipe
+    );
+
+    @include assert-equal(
+      migration.alias-migration-middleware(
+        (
+          "type": "element",
+          "name": "",
+        ),
+        (
+          "alias": (
+            "entity": "entity-alias",
+          ),
+        ),
+        $pipe
+      ),
+      $pipe
+    );
+  }
+}
