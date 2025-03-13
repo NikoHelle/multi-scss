@@ -6,7 +6,7 @@
 @use "./helpers.scss" as helpers;
 @use "./process.scss" as process;
 @use "./output.scss" as output;
-@use "./selectors.scss" as selectors;
+@use "./selector-funcs.scss" as selectorFuncs;
 @use "./core-entities.scss" as coreEntities;
 
 /// Emits css content for multiple selectors. Selectors are appended to parent.
@@ -67,7 +67,7 @@
     $newLevel: process.create-process-level(
       $ARGS_MAP: $ARGS_MAP,
     );
-    $selector: selectors.create-selector($type, $name, globals.get-multi-sass-config());
+    $selector: selectorFuncs.create-level-selector($newLevel, globals.get-multi-sass-config());
     $newLevel: levelUtils.set-level-selector($newLevel, "#{$closestSelector}#{$selector}");
 
     @if $separator == " " {
