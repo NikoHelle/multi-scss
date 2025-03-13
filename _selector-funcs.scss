@@ -63,17 +63,15 @@
 }
 
 @function selector-middleware($level, $config, $pipe) {
-  $alias: helpers.nullify-value-if-falsy(levelUtils.get-level-alias($level, $config));
-
-  @return if($alias, alias-to-selector($level, $alias), $pipe);
+  @return $pipe;
 }
 
 /// Extra guides to config to know whats?
 
 @function create-level-selector($level, $config) {
   $pipe: (create-prefix($level, $config), create-delimeter($level, $config), create-selector-value($level, $config));
-  $middleWare: globals.get-selector-middleware($config) or meta.get-function("selector-middleware");
-  @return pipe-to-selector(meta.call($middleWare, $level, $config, $pipe));
+  $middleware: globals.get-selector-middleware($config) or meta.get-function("selector-middleware");
+  @return pipe-to-selector(meta.call($middleware, $level, $config, $pipe));
 }
 
 @function pipe-to-selector($pipe) {
