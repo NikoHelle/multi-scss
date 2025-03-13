@@ -266,7 +266,6 @@
         ),
         "."
       );
-      @debug "t1";
       @include assert-equal(
         selectorFuncs.create-level-selector(
           (
