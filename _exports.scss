@@ -1,0 +1,50 @@
+@use "sass:meta";
+@use "sass:list";
+@use "./globals.scss" as globals;
+@use "./level-utils.scss" as levelUtils;
+@use "./helpers.scss" as helpers;
+@use "./migration";
+
+@function get-entity-name($entity) {
+  @return levelUtils.get-level-name($entity);
+}
+
+@function get-entity-parent($entity) {
+  @return levelUtils.get-level-parent($entity);
+}
+
+@function is-block-entity($entity) {
+  @return levelUtils.is-block-level($entity);
+}
+
+@function is-modifier-entity($entity) {
+  @return levelUtils.is-modifier-level($entity);
+}
+
+@function is-element-entity($entity) {
+  @return levelUtils.is-element-level($entity);
+}
+
+@function is-custom-entity($entity) {
+  @return levelUtils.is-custom-level($entity);
+}
+
+@function find-closest-entity($currentEntity, $type, $name: null) {
+  @return levelUtils.get-closest-with-name-or-type($currentEntity, $type, $name);
+}
+
+@function get-config-info-value($name) {
+  @return globals.get-info-value($name);
+}
+
+@function alias-middleware($entity, $config, $pipe) {
+  @return migration.alias-migration-middleware($entity, $config, $pipe);
+}
+
+@function replace-selector-list($selectorList, $index, $replacee) {
+  @return helpers.replace-list-item($selectorList, $replacee, $index);
+}
+
+@function get-selector-by-index($selectorList, $index) {
+  @return list.nth($selectorList, $index);
+}
