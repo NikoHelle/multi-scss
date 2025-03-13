@@ -1,8 +1,8 @@
 {
   "name": "@nikohelle/multi-sass",
-  "version": "0.9.0",
-  "description": "This library was developed for a need to publish stylesheets in multi-purpose environments with a need to pick only certain styles of a component or all styles. And partials of nested component styles. In some cases, also selector renaming is required and merging with parent elements.",
-  "homepage": "https://github.com/NikoHelle/multi-sass",
+  "version": "1.0.0",
+  "description": "Library for publishing stylesheets in multi-purpose environments with support for outputting only named partials of a SASS mixin. Selector renaming and customisation is also supported with middleware.",
+  "homepage": "https://github.com/NikoHelle/multi-scss",
   "license": "MIT",
   "main": "_index.scss",
   "keywords": [
@@ -13,15 +13,20 @@
     "stylesheet",
     "multi",
     "multi-purpose",
-    "partial"
+    "partial",
+    "export",
+    "mixin",
+    "dynamic"
   ],
   "scripts": {
     "lint": "yarn stylelint \"*.scss\"",
     "test": "jest --config __tests__/jest.config.js"
   },
+  "dependencies": {
+    "sass": "^1.83.4"
+  },
   "devDependencies": {
     "jest": "^29.7.0",
-    "sass": "^1.83.4",
     "sass-loader": "^16.0.4",
     "sass-true": "^8.1.0",
     "stylelint": "^16.14.0",
