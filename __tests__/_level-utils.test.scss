@@ -1,0 +1,1099 @@
+@use "sass-true" as *;
+@use "../_level-utils" as levelUtils;
+@use "../globals" as globals;
+@use "../rules" as rules;
+@use "sass:map";
+@use "sass:meta";
+@use "sass:list";
+
+$ruleMap: rules.rules-to-map(
+  (
+    "modifiers": true,
+    "elements": true,
+    "extras": true,
+  )
+);
+$config: ();
+
+@function create-default-parent($extraProps: null) {
+  $parent: (
+    "depth": 1,
+    "contentOnly": false,
+    "isAllowed": true,
+    "type": "block",
+    "name": "parent",
+    "selector": ".parent",
+  );
+  @if $extraProps {
+    @return map.merge($parent, $extraProps);
+  }
+  @return $parent;
+}
+
+@function create-default-level($extraProps: null) {
+  $level: (
+    "parent": create-default-parent(),
+    "type": "block",
+    "depth": 2,
+    "name": "test-block",
+  );
+  @if $extraProps {
+    @return map.merge($level, $extraProps);
+  }
+  @return $level;
+}
+
+// test helpers to check is-level-x functions
+@function testIsLevelFn($targetType, $fn, $types) {
+  $len: list.length($types);
+  $errors: [];
+
+  @for $i from 1 through $len - 1 {
+    $type: list.nth($types, $i);
+    $result: meta.call(
+      $fn,
+      (
+        type: $type,
+      )
+    );
+
+    @if ($targetType == $type and $result == false) {
+      $errors: list.append($errors, "Error: The check for '#{$targetType}' returned wrong result. Should be true");
+    }
+    @if ($targetType != $type and $result == true) {
+      $errors: list.append(
+        $errors,
+        "Error: The check for '#{$targetType}' returned wrong result with '#{$type}'. Should be false "
+      );
+    }
+  }
+
+  @return $errors;
+}
+// test helpers to check is-x-type functions
+@function testIsTypeFn($targetType, $fn, $types) {
+  $len: list.length($types);
+  $errors: [];
+
+  @for $i from 1 through $len - 1 {
+    $type: list.nth($types, $i);
+    $result: meta.call($fn, $type);
+
+    @if ($targetType == $type and $result == false) {
+      $errors: list.append($errors, "Error: The check for '#{$targetType}' returned wrong result. Should be true");
+    }
+    @if ($targetType != $type and $result == true) {
+      $errors: list.append(
+        $errors,
+        "Error: The check for '#{$targetType}' returned wrong result with '#{$type}'. Should be false "
+      );
+    }
+  }
+
+  @return $errors;
+}
+
+@include describe("Level util functions") {
+  @include it("get-current-level() returns the last level in the list") {
+    $levels: (
+      (
+        "type": "block",
+      ),
+      (
+        "type": "element",
+      )
+    );
+    @include assert-equal(
+      levelUtils.get-current-level($levels),
+      (
+        "type": "element",
+      )
+    );
+  }
+
+  @include it("get-level-parent-selector() returns the parent selector") {
+    @include assert-equal(levelUtils.get-level-parent-selector($config, create-default-level()), ".parent");
+  }
+
+  @include describe("get-closest-with-name-or-type() returns the closest matching level") {
+    $level: (
+      "type": "element",
+      "name": "element",
+      "parent": (
+        "type": "modifier",
+        "name": "parent-modifier",
+        "parent": (
+          "type": "modifier",
+          "name": "parent-parent-modifier",
+          "parent": (
+            "type": "custom",
+            "name": "parent-parent-parent-custom",
+            "parent": (
+              "type": "extra",
+              "name": "parent-parent-parent-parent-extra",
+              "parent": (
+                "type": "block",
+                "name": "root",
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    @include it("if name is not set, only type is used") {
+      $result: levelUtils.get-closest-with-name-or-type($level, "modifier");
+      @include assert-equal(map.get($result, "name"), "parent-modifier");
+
+      $result: levelUtils.get-closest-with-name-or-type($result, "modifier");
+      @include assert-equal(map.get($result, "name"), "parent-parent-modifier");
+
+      $result: levelUtils.get-closest-with-name-or-type($level, "custom");
+      @include assert-equal(map.get($result, "name"), "parent-parent-parent-custom");
+
+      $result: levelUtils.get-closest-with-name-or-type($level, "extra");
+      @include assert-equal(map.get($result, "name"), "parent-parent-parent-parent-extra");
+
+      $result: levelUtils.get-closest-with-name-or-type($level, "block");
+      @include assert-equal(map.get($result, "name"), "root");
+    }
+
+    @include it("if name is set, type and name are used") {
+      $result: levelUtils.get-closest-with-name-or-type($level, "modifier", "parent-parent-modifier");
+      @include assert-equal(map.get($result, "name"), "parent-parent-modifier");
+
+      $result: levelUtils.get-closest-with-name-or-type($level, "custom");
+      @include assert-equal(map.get($result, "name"), "parent-parent-parent-custom");
+
+      $result: levelUtils.get-closest-with-name-or-type($level, "extra");
+      @include assert-equal(map.get($result, "name"), "parent-parent-parent-parent-extra");
+
+      $result: levelUtils.get-closest-with-name-or-type($level, "block", "not-found");
+      @include assert-equal($result, null);
+    }
+    @include it("if not found, null is returned") {
+      $result: levelUtils.get-closest-with-name-or-type($level, "modifier", "not-found");
+      @include assert-equal($result, null);
+
+      $result: levelUtils.get-closest-with-name-or-type($level, "unknown");
+      @include assert-equal($result, null);
+
+      $result: levelUtils.get-closest-with-name-or-type($level, "block", "not-found");
+      @include assert-equal($result, null);
+
+      $result: levelUtils.get-closest-with-name-or-type((), "block");
+      @include assert-equal($result, null);
+    }
+    @include it("if startFromLevel is true (default:false), the first checked level it given one, not the parent") {
+      $result: levelUtils.get-closest-with-name-or-type($level, "element");
+      @include assert-equal($result, null);
+
+      $result: levelUtils.get-closest-with-name-or-type($level, "element", null, true);
+      @include assert-equal(map.get($result, "name"), "element");
+
+      $secondModifier: levelUtils.get-closest-with-name-or-type($level, "modifier", "parent-parent-modifier");
+      $result: levelUtils.get-closest-with-name-or-type($secondModifier, "modifier");
+      @include assert-equal($result, null);
+
+      $result: levelUtils.get-closest-with-name-or-type($secondModifier, "modifier", null, true);
+      @include assert-equal(map.get($result, "name"), "parent-parent-modifier");
+    }
+  }
+
+  @include it(
+    "get-closest-entity() returns the closest level with entity (block, modifier, element). Search starts from given element (startFromLevel is true)"
+  ) {
+    $level: (
+      "type": "element",
+      "name": "element",
+      "parent": (
+        "type": "modifier",
+        "name": "parent-modifier",
+        "parent": (
+          "type": "modifier",
+          "name": "parent-parent-modifier",
+          "parent": (
+            "type": "custom",
+            "name": "parent-parent-parent-custom",
+            "parent": (
+              "type": "extra",
+              "name": "parent-parent-parent-parent-extra",
+              "parent": (
+                "type": "block",
+                "name": "root",
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    $element: levelUtils.get-closest-entity($level);
+    @include assert-equal(map.get($element, "name"), "element");
+
+    $firstModifier: levelUtils.get-closest-entity($level, false);
+    @include assert-equal(map.get($firstModifier, "name"), "parent-modifier");
+
+    $firstModifier: levelUtils.get-closest-entity($firstModifier);
+    @include assert-equal(map.get($firstModifier, "name"), "parent-modifier");
+
+    $secondModifier: levelUtils.get-closest-entity($firstModifier, false);
+    @include assert-equal(map.get($secondModifier, "name"), "parent-parent-modifier");
+
+    $root: levelUtils.get-closest-entity($secondModifier, false);
+    @include assert-equal(map.get($root, "name"), "root");
+
+    $root: levelUtils.get-closest-entity($root);
+    @include assert-equal(map.get($root, "name"), "root");
+
+    $root: levelUtils.get-closest-entity($root, false);
+    @include assert-equal($root, null);
+  }
+
+  @include describe("is-level-allowed-in-rules() returns true for allowed levels") {
+    @include it("blocks cannot be ruled out") {
+      $level: (
+        "type": "block",
+        "name": "test-block",
+      );
+      @include assert-equal(levelUtils.is-level-allowed-in-rules($ruleMap, $level), true);
+    }
+    @include it("modifiers are checked by name") {
+      $ruleMap: rules.rules-to-map(
+        (
+          "modifiers": "allowed",
+        )
+      );
+      @include assert-equal(
+        levelUtils.is-level-allowed-in-rules(
+          $ruleMap,
+          (
+            "type": "modifier",
+            "name": "allowed",
+          )
+        ),
+        true
+      );
+      @include assert-equal(
+        levelUtils.is-level-allowed-in-rules(
+          $ruleMap,
+          (
+            "type": "modifier",
+            "name": "not-allowed",
+          )
+        ),
+        false
+      );
+    }
+    @include it("elements are checked by name and closest modifier") {
+      $ruleMap: rules.rules-to-map(
+        (
+          "modifiers": "allowed",
+          "elements": (
+            "allowed": "allowed",
+          ),
+        )
+      );
+      @include assert-equal(
+        levelUtils.is-level-allowed-in-rules(
+          $ruleMap,
+          (
+            "type": "element",
+            "name": "allowed",
+            "parent": (
+              "type": "modifier",
+              "name": "allowed",
+            ),
+          )
+        ),
+        true
+      );
+      @include assert-equal(
+        levelUtils.is-level-allowed-in-rules(
+          $ruleMap,
+          (
+            "type": "element",
+            "name": "allowed",
+            "parent": (
+              "type": "modifier",
+              "name": "not-allowed",
+            ),
+          )
+        ),
+        false
+      );
+      @include assert-equal(
+        levelUtils.is-level-allowed-in-rules(
+          $ruleMap,
+          (
+            "type": "element",
+            "name": "allowed",
+          )
+        ),
+        true
+      );
+      @include assert-equal(
+        levelUtils.is-level-allowed-in-rules(
+          $ruleMap,
+          (
+            "type": "element",
+            "name": "not-allowed",
+          )
+        ),
+        false
+      );
+    }
+    @include it("unnamed content is renamed as 'base' when checking is content allowed") {
+      @include assert-equal(
+        levelUtils.is-level-allowed-in-rules(
+          rules.rules-to-map(
+            (
+              "elements": true,
+            )
+          ),
+          (
+            "type": "content",
+          )
+        ),
+        true
+      );
+      @include assert-equal(
+        levelUtils.is-level-allowed-in-rules(
+          rules.rules-to-map(
+            (
+              "elements": "base",
+            )
+          ),
+          (
+            "type": "content",
+          )
+        ),
+        true
+      );
+
+      @include assert-equal(
+        levelUtils.is-level-allowed-in-rules(
+          rules.rules-to-map(
+            (
+              "elements": false,
+            )
+          ),
+          (
+            "type": "content",
+          )
+        ),
+        false
+      );
+      @include assert-equal(
+        levelUtils.is-level-allowed-in-rules(
+          rules.rules-to-map(
+            (
+              "elements": false,
+              "modifiers": false,
+              "extras": false,
+            )
+          ),
+          (
+            "type": "content",
+            "parent": (
+              "type": "modifier",
+              "name": "modifier",
+            ),
+          )
+        ),
+        false
+      );
+
+      @include assert-equal(
+        levelUtils.is-level-allowed-in-rules(
+          rules.rules-to-map(
+            (
+              "elements": "xxx",
+            )
+          ),
+          (
+            "type": "content",
+          )
+        ),
+        false
+      );
+    }
+    @include it("content is checked from elements. The 'base' name is used if name is not set.") {
+      @include assert-equal(
+        levelUtils.is-level-allowed-in-rules(
+          rules.rules-to-map(
+            (
+              "elements": "base",
+            )
+          ),
+          (
+            "type": "content",
+            "parent": (
+              "type": "block",
+              "name": "root",
+            ),
+          )
+        ),
+        true
+      );
+      @include assert-equal(
+        levelUtils.is-level-allowed-in-rules(
+          rules.rules-to-map(
+            (
+              "elements": true,
+            )
+          ),
+          (
+            "type": "content",
+            "name": "base",
+            "parent": (
+              "type": "block",
+              "name": "root",
+            ),
+          )
+        ),
+        true
+      );
+
+      @include assert-equal(
+        levelUtils.is-level-allowed-in-rules(
+          rules.rules-to-map(
+            (
+              "elements": false,
+            )
+          ),
+          (
+            "type": "content",
+            "name": "base",
+            "parent": (
+              "type": "block",
+              "name": "root",
+            ),
+          )
+        ),
+        false
+      );
+    }
+    @include it("content inside a modifier is checked from modifier rules ONLY") {
+      $ruleMap: rules.rules-to-map(
+        (
+          "modifiers": (
+            "allowed": true,
+            "base": true,
+          ),
+          "elements": (
+            "allowed": true,
+            "base": false,
+          ),
+        )
+      );
+      @include assert-equal(
+        levelUtils.is-level-allowed-in-rules(
+          $ruleMap,
+          (
+            "type": "content",
+            "name": "allowed",
+            "parent": (
+              "type": "modifier",
+              "name": "allowed",
+            ),
+          )
+        ),
+        true
+      );
+      @include assert-equal(
+        levelUtils.is-level-allowed-in-rules(
+          $ruleMap,
+          (
+            "type": "content",
+            "parent": (
+              "type": "modifier",
+              "name": "allowed",
+            ),
+          )
+        ),
+        true
+      );
+      @include assert-equal(
+        levelUtils.is-level-allowed-in-rules(
+          $ruleMap,
+          (
+            "type": "content",
+            "name": "allowed",
+            "parent": (
+              "type": "modifier",
+            ),
+          )
+        ),
+        false
+      );
+      @include assert-equal(
+        levelUtils.is-level-allowed-in-rules(
+          $ruleMap,
+          (
+            "type": "content",
+            "name": "allowed",
+            "parent": (
+              "type": "modifier",
+              "name": "not-allowed",
+            ),
+          )
+        ),
+        false
+      );
+    }
+    @include it("content in other entities or without parent is allowed by name only. 'base' is used if unnamed.") {
+      $ruleMap: rules.rules-to-map(
+        (
+          "elements": (
+            "content": true,
+            "allowed": true,
+            "base": true,
+          ),
+          "extras": "allowed",
+          "custom": "allowed",
+        )
+      );
+      @include assert-equal(
+        levelUtils.is-level-allowed-in-rules(
+          $ruleMap,
+          (
+            "type": "content",
+            "name": "content",
+            "parent": (
+              "type": "element",
+              "name": "not-allowed",
+            ),
+          )
+        ),
+        true
+      );
+      @include assert-equal(
+        levelUtils.is-level-allowed-in-rules(
+          $ruleMap,
+          (
+            "type": "content",
+            "parent": (
+              "type": "element",
+              "name": "not-allowed",
+            ),
+          )
+        ),
+        true
+      );
+      @include assert-equal(
+        levelUtils.is-level-allowed-in-rules(
+          $ruleMap,
+          (
+            "type": "content",
+            "name": "content",
+            "parent": (
+              "type": "element",
+            ),
+          )
+        ),
+        true
+      );
+      // even if parent is not allowed, content is allowed. Not outputted, but allowed.
+      @include assert-equal(
+        levelUtils.is-level-allowed-in-rules(
+          $ruleMap,
+          (
+            "type": "content",
+            "name": "base",
+            "parent": (
+              "type": "element",
+              "name": "not-allowed",
+            ),
+          )
+        ),
+        true
+      );
+
+      @include assert-equal(
+        levelUtils.is-level-allowed-in-rules(
+          $ruleMap,
+          (
+            "type": "content",
+            "name": "content",
+            "parent": (
+              "type": "extra",
+              "name": "not-allowed",
+            ),
+          )
+        ),
+        true
+      );
+      @include assert-equal(
+        levelUtils.is-level-allowed-in-rules(
+          $ruleMap,
+          (
+            "type": "content",
+            "parent": (
+              "type": "extra",
+            ),
+          )
+        ),
+        true
+      );
+
+      @include assert-equal(
+        levelUtils.is-level-allowed-in-rules(
+          $ruleMap,
+          (
+            "type": "content",
+            "name": "not-allowed",
+            "parent": (
+              "type": "extra",
+              "name": "allowed",
+            ),
+          )
+        ),
+        false
+      );
+      @include assert-equal(
+        levelUtils.is-level-allowed-in-rules(
+          $ruleMap,
+          (
+            "type": "content",
+            "parent": (
+              "type": "custom",
+              "name": "not-allowed",
+            ),
+          )
+        ),
+        true
+      );
+      @include assert-equal(
+        levelUtils.is-level-allowed-in-rules(
+          $ruleMap,
+          (
+            "type": "content",
+            "name": "not-allowed",
+            "parent": (
+              "type": "custom",
+            ),
+          )
+        ),
+        false
+      );
+    }
+    @include it("extras are checked by name") {
+      $ruleMap: rules.rules-to-map(
+        (
+          "extras": "allowed",
+        )
+      );
+      @include assert-equal(
+        levelUtils.is-level-allowed-in-rules(
+          $ruleMap,
+          (
+            "type": "extra",
+            "name": "allowed",
+          )
+        ),
+        true
+      );
+      @include assert-equal(
+        levelUtils.is-level-allowed-in-rules(
+          $ruleMap,
+          (
+            "type": "extra",
+            "name": "not-allowed",
+          )
+        ),
+        false
+      );
+    }
+    @include it("custom are always allowed") {
+      $ruleMap: rules.rules-to-map(
+        (
+          "extras": "allowed",
+        )
+      );
+      @include assert-equal(
+        levelUtils.is-level-allowed-in-rules(
+          $ruleMap,
+          (
+            "type": "custom",
+            "name": "allowed",
+          )
+        ),
+        true
+      );
+      @include assert-equal(
+        levelUtils.is-level-allowed-in-rules(
+          $ruleMap,
+          (
+            "type": "custom",
+            "name": "not-allowed",
+          )
+        ),
+        true
+      );
+      @include assert-equal(
+        levelUtils.is-level-allowed-in-rules(
+          $ruleMap,
+          (
+            "type": "custom",
+          )
+        ),
+        true
+      );
+    }
+  }
+
+  @include it("find-closest-in-current() returns the closest matching level in global levels") {
+    $level: (
+      "type": "element",
+      "name": "element",
+      "parent": (
+        "type": "modifier",
+        "name": "parent-modifier",
+        "parent": (
+          "type": "modifier",
+          "name": "parent-parent-modifier",
+          "parent": (
+            "type": "custom",
+            "name": "parent-parent-parent-custom",
+            "parent": (
+              "type": "extra",
+              "name": "parent-parent-parent-parent-extra",
+              "parent": (
+                "type": "block",
+                "name": "root",
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    $levels: (
+      // empty one is to create a list, not a map
+      (),
+      $level
+    );
+    // note: globals will be stored until tests end!
+    $newController: globals.store-multi-sass-controller((), $levels, ());
+
+    @include it("returns null if there are no entities in args") {
+      $args: (
+        "blokkk": "root",
+      );
+
+      @include assert-equal(levelUtils.find-closest-in-current($args), null);
+    }
+    @include it("returns null if not found") {
+      $args: (
+        "element": "elemnt",
+      );
+
+      @include assert-equal(levelUtils.find-closest-in-current($args), null);
+    }
+    @include it("starts from given levels (startFromLevel is true)") {
+      $result: levelUtils.find-closest-in-current(
+        (
+          "element": "element",
+        )
+      );
+      @include assert-equal(map.get($result, "name"), "element");
+    }
+    @include it("name is used if set") {
+      $result: levelUtils.find-closest-in-current(
+        (
+          "modifier": "parent-parent-modifier",
+        )
+      );
+      @include assert-equal(map.get($result, "name"), "parent-parent-modifier");
+    }
+    @include it("only type is used if name is empty") {
+      $result: levelUtils.find-closest-in-current(
+        (
+          "modifier": "",
+        )
+      );
+      @include assert-equal(map.get($result, "name"), "parent-modifier");
+    }
+  }
+
+  @include it("is-level-... checks level type and returns true when matches") {
+    $testTypes: ("content", "block", "modifier", "element", "extra", "custom", "unknown", false, true, 1, 0, null);
+    $realTypes: ("content", "block", "modifier", "element", "extra", "custom");
+
+    @each $type in $realTypes {
+      @include it("is-#{$type}-level returns true for #{$type} type") {
+        $fn: meta.get-function("is-#{$type}-level", false, "levelUtils");
+        $testResults: testIsLevelFn($type, $fn, $testTypes);
+        @include assert-equal($testResults, []);
+      }
+    }
+
+    @each $type in $realTypes {
+      @include it("is-#{$type}-level returns true for #{$type} type") {
+        $fn: meta.get-function("is-#{$type}-type", false, "levelUtils");
+        $testResults: testIsTypeFn($type, $fn, $testTypes);
+        @include assert-equal($testResults, []);
+      }
+    }
+
+    @include it("is-level-content-only returns true for content and extra. Only type is checked") {
+      @include assert-equal(
+        levelUtils.is-level-content-only(
+          (
+            type: "content",
+          )
+        ),
+        true
+      );
+      @include assert-equal(
+        levelUtils.is-level-content-only(
+          (
+            type: "extra",
+            contentOnly: false,
+          )
+        ),
+        true
+      );
+      @include assert-equal(
+        levelUtils.is-level-content-only(
+          (
+            type: "element",
+            contentOnly: true,
+          )
+        ),
+        false
+      );
+    }
+
+    @include it("get-level-content-only returns the contentOnly property") {
+      @include assert-equal(
+        levelUtils.get-level-content-only(
+          (
+            "contentOnly": true,
+          )
+        ),
+        true
+      );
+      @include assert-equal(
+        levelUtils.get-level-content-only(
+          (
+            "contentOnly": false,
+          )
+        ),
+        false
+      );
+      @include assert-equal(
+        levelUtils.get-level-content-only(
+          (
+            "key": true,
+          )
+        ),
+        null
+      );
+    }
+
+    @include it("get-level-type returns the type of the level") {
+      @include assert-equal(
+        levelUtils.get-level-type(
+          (
+            "type": "block",
+          )
+        ),
+        "block"
+      );
+      @include assert-equal(
+        levelUtils.get-level-type(
+          (
+            "key": "block",
+          )
+        ),
+        null
+      );
+    }
+
+    @include it("get-level-name returns the name of the level") {
+      @include assert-equal(
+        levelUtils.get-level-name(
+          (
+            "name": "test-block",
+          )
+        ),
+        "test-block"
+      );
+      @include assert-equal(levelUtils.get-level-name(()), null);
+    }
+
+    @include it("set-level-name sets the name of the level") {
+      $level: (
+        "name": "old-name",
+      );
+      $result: levelUtils.set-level-name($level, "new-name");
+      @include assert-equal(map.get($result, "name"), "new-name");
+      @include assert-equal(map.get($level, "name"), "old-name");
+    }
+
+    @include it("get-level-parent returns the parent of the level") {
+      $level: (
+        "parent": "parent-level",
+      );
+      @include assert-equal(levelUtils.get-level-parent($level), "parent-level");
+    }
+
+    @include it("set-level-parent sets the parent of the level") {
+      $level: (
+        "parent": "old-parent",
+      );
+      $result: levelUtils.set-level-parent($level, "new-parent");
+      @include assert-equal(map.get($result, "parent"), "new-parent");
+      @include assert-equal(map.get($level, "parent"), "old-parent");
+    }
+
+    @include it("get-level-depth returns the depth of the level") {
+      $level: (
+        "depth": 2,
+      );
+      @include assert-equal(levelUtils.get-level-depth($level), 2);
+    }
+
+    @include it("set-level-depth sets the depth of the level") {
+      $level: (
+        "depth": 1,
+      );
+      $result: levelUtils.set-level-depth($level, 2);
+      @include assert-equal(map.get($result, "depth"), 2);
+      @include assert-equal(map.get($level, "depth"), 1);
+    }
+
+    @include it("get-level-selector returns the selector of the level") {
+      $level: (
+        "selector": ".test-block",
+      );
+      @include assert-equal(levelUtils.get-level-selector($level), ".test-block");
+    }
+
+    @include it("set-level-selector sets the selector of the level") {
+      $level: (
+        "selector": ".old-selector",
+      );
+      $result: levelUtils.set-level-selector($level, ".new-selector");
+      @include assert-equal(map.get($result, "selector"), ".new-selector");
+    }
+
+    @include it("collect-parent-entity-selectors collects selectors from parent entities") {
+      $level: (
+        "selector": ".child",
+        "parent": (
+          "selector": ".parent",
+          "parent": (
+            "selector": ".root",
+          ),
+        ),
+      );
+      @include assert-equal(levelUtils.collect-parent-entity-selectors($level), ".root.parent.child");
+    }
+
+    @include it("get-level-emit-target returns the emit target of the level") {
+      $level: (
+        "emitTarget": "EMIT_TARGET_ROOT",
+      );
+      @include assert-equal(levelUtils.get-level-emit-target($level), "EMIT_TARGET_ROOT");
+    }
+
+    @include it("set-level-emit-target sets the emit target of the level") {
+      $level: (
+        "emitTarget": "EMIT_TARGET_NESTED",
+      );
+      $result: levelUtils.set-level-emit-target($level, "EMIT_TARGET_ROOT");
+      @include assert-equal(map.get($result, "emitTarget"), "EMIT_TARGET_ROOT");
+      @include assert-equal(map.get($level, "emitTarget"), "EMIT_TARGET_NESTED");
+    }
+
+    @include it("set-level-emit-target-to-root sets the emit target to root") {
+      $level: (
+        "emitTarget": "EMIT_TARGET_NESTED",
+      );
+      $result: levelUtils.set-level-emit-target-to-root($level);
+      @include assert-equal(map.get($result, "emitTarget"), "EMIT_TARGET_ROOT");
+      @include assert-equal(map.get($level, "emitTarget"), "EMIT_TARGET_NESTED");
+    }
+
+    @include it("set-level-emit-target-to-nested sets the emit target to nested") {
+      $level: (
+        "emitTarget": "EMIT_TARGET_ROOT",
+      );
+      $result: levelUtils.set-level-emit-target-to-nested($level);
+      @include assert-equal(map.get($result, "emitTarget"), "EMIT_TARGET_NESTED");
+      @include assert-equal(map.get($level, "emitTarget"), "EMIT_TARGET_ROOT");
+    }
+
+    @include it("should-level-emit-at-root returns true if emit target is root") {
+      @include assert-equal(
+        levelUtils.should-level-emit-at-root(
+          (
+            "emitTarget": "EMIT_TARGET_ROOT",
+          )
+        ),
+        true
+      );
+      @include assert-equal(
+        levelUtils.should-level-emit-at-root(
+          (
+            "emitTarget": "EMIT_TARGET_NESTED",
+          )
+        ),
+        false
+      );
+    }
+
+    @include it("should-level-emit-nested returns true if emit target is nested") {
+      @include assert-equal(
+        levelUtils.should-level-emit-nested(
+          (
+            "emitTarget": "EMIT_TARGET_ROOT",
+          )
+        ),
+        false
+      );
+      @include assert-equal(
+        levelUtils.should-level-emit-nested(
+          (
+            "emitTarget": "EMIT_TARGET_NESTED",
+          )
+        ),
+        true
+      );
+    }
+
+    @include it("is-level-allowed returns true if level is allowed") {
+      $level: (
+        "isAllowed": true,
+      );
+      @include assert-equal(levelUtils.is-level-allowed($level), true);
+    }
+
+    @include it("is-root-level returns true if level is root (has no parent)") {
+      @include assert-equal(
+        levelUtils.is-root-level(
+          (
+            "parent": null,
+          )
+        ),
+        true
+      );
+      @include assert-equal(
+        levelUtils.is-root-level(
+          (
+            "parent": "",
+          )
+        ),
+        true
+      );
+      @include assert-equal(
+        levelUtils.is-root-level(
+          (
+            "parent": (),
+          )
+        ),
+        false
+      );
+    }
+  }
+}

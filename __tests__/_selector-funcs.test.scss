@@ -1,0 +1,301 @@
+@use "sass-true" as *;
+@use "sass:map";
+@use "sass:list";
+@use "sass:meta";
+@use "../core-funcs" as coreFuncs;
+@use "../helpers" as helpers;
+@use "../level-utils" as levelUtils;
+@use "../selector-funcs" as selectorFuncs;
+@use "../migration" as migration;
+
+@function selector-middleware($level, $config, $pipe) {
+  @if not levelUtils.is-block-level($level) {
+    @return $pipe;
+  }
+  $name: levelUtils.get-level-name($level);
+  @return '*[data-block="#{$name}"]';
+}
+
+@function selector-middleware-id-prefix($level, $config, $pipe) {
+  @return list.set-nth($pipe, 1, "#");
+}
+
+@function selector-middleware-replace-modifier-delimeter($level, $config, $pipe) {
+  @if not levelUtils.is-modifier-level($level) {
+    @return $pipe;
+  }
+  @return list.set-nth($pipe, 1, "----");
+}
+
+@include describe("_selector-funcs.scss") {
+  @include describe("create-selector()") {
+    @include it("creates a block selector") {
+      $config: helpers.create-empty-map();
+
+      @include assert-equal(
+        selectorFuncs.create-level-selector(
+          (
+            type: "block",
+            name: "blockName",
+          ),
+          $config
+        ),
+        ".blockName"
+      );
+
+      @include assert-equal(
+        selectorFuncs.create-level-selector(
+          (
+            type: "block",
+          ),
+          $config: (blockName: "blockName")
+        ),
+        ".blockName"
+      );
+    }
+
+    @include it("config.blockPrefix is used") {
+      $config: (
+        "blockPrefix": "prefix--",
+      );
+
+      @include assert-equal(
+        selectorFuncs.create-level-selector(
+          (
+            type: "block",
+            name: "blockName",
+          ),
+          $config
+        ),
+        ".prefix--blockName"
+      );
+
+      @include assert-equal(
+        selectorFuncs.create-level-selector(
+          (
+            type: "block",
+            name: "blockName",
+          ),
+          $config
+        ),
+        ".prefix--blockName"
+      );
+    }
+
+    @include it("creates a modifier selector with create-modifier-selector()") {
+      $config: helpers.create-empty-map();
+
+      @include assert-equal(
+        selectorFuncs.create-level-selector(
+          (
+            type: "modifier",
+            name: "modifierName",
+          ),
+          $config
+        ),
+        "modifierName"
+      );
+
+      @include assert-equal(
+        selectorFuncs.create-level-selector(
+          (
+            type: "modifier",
+            name: "modifierName",
+          ),
+          $config
+        ),
+        "modifierName"
+      );
+    }
+
+    @include it("config.modifierDelimeter is used") {
+      $config: (
+        "modifierDelimeter": "----",
+      );
+
+      @include assert-equal(
+        selectorFuncs.create-level-selector(
+          (
+            type: "modifier",
+            name: "modifierName",
+          ),
+          $config
+        ),
+        "----modifierName"
+      );
+
+      @include assert-equal(
+        selectorFuncs.create-level-selector(
+          (
+            type: "modifier",
+            name: "modifierName",
+          ),
+          $config
+        ),
+        "----modifierName"
+      );
+    }
+
+    @include it("creates an element selector with create-element-selector()") {
+      $config: helpers.create-empty-map();
+
+      @include assert-equal(
+        selectorFuncs.create-level-selector(
+          (
+            type: "element",
+            name: "elementName",
+          ),
+          $config
+        ),
+        "elementName"
+      );
+
+      @include assert-equal(
+        selectorFuncs.create-level-selector(
+          (
+            type: "element",
+            name: "elementName",
+          ),
+          $config
+        ),
+        "elementName"
+      );
+    }
+
+    @include it("config.elementDelimeter is used") {
+      $config: (
+        "elementDelimeter": "____",
+      );
+
+      @include assert-equal(
+        selectorFuncs.create-level-selector(
+          (
+            type: "element",
+            name: "elementName",
+          ),
+          $config
+        ),
+        "____elementName"
+      );
+
+      @include assert-equal(
+        selectorFuncs.create-level-selector(
+          (
+            type: "element",
+            name: "elementName",
+          ),
+          $config
+        ),
+        "____elementName"
+      );
+    }
+
+    @include it("creates a custom selector that uses name as selector") {
+      $config: helpers.create-empty-map();
+
+      @include assert-equal(
+        selectorFuncs.create-level-selector(
+          (
+            type: "custom",
+            name: "#div a.b",
+          ),
+          $config
+        ),
+        "#div a.b"
+      );
+    }
+  }
+
+  @include describe("if config.selectorMiddleWare is set, it is used") {
+    @include it("result is outputted") {
+      @include assert-equal(
+        selectorFuncs.create-level-selector(
+          (
+            type: "block",
+            name: "blockName",
+          ),
+          $config: ("selectorMiddleware": meta.get-function("selector-middleware"))
+        ),
+        '*[data-block="blockName"]'
+      );
+    }
+
+    @include it("the prefix can be manipulated") {
+      @include assert-equal(
+        selectorFuncs.create-level-selector(
+          (
+            type: "block",
+            name: "id",
+          ),
+          $config: ("selectorMiddleware": meta.get-function("selector-middleware-id-prefix"))
+        ),
+        "#id"
+      );
+    }
+    @include it("the delimeter can be manipulated") {
+      @include assert-equal(
+        selectorFuncs.create-level-selector(
+          (
+            type: "modifier",
+            name: "mod",
+          ),
+          $config: ("selectorMiddleware": meta.get-function("selector-middleware-replace-modifier-delimeter"))
+        ),
+        "----mod"
+      );
+    }
+  }
+
+  @include describe("selector middleware can be passed in config.") {
+    @include it("create-level-selector() uses the middleware for aliases") {
+      $config: (
+        "alias": (
+          "element": "alias",
+          "modifier": "alias",
+          "block": "alias",
+          "xxx": "alias",
+        ),
+        "selectorMiddleware": meta.get-function("alias-migration-middleware", false, "migration"),
+      );
+      @include assert-equal(
+        selectorFuncs.create-level-selector(
+          (
+            type: "block",
+          ),
+          $config
+        ),
+        "."
+      );
+      @include assert-equal(
+        selectorFuncs.create-level-selector(
+          (
+            type: "modifier",
+            name: "modifier",
+          ),
+          $config
+        ),
+        ".alias"
+      );
+      @include assert-equal(
+        selectorFuncs.create-level-selector(
+          (
+            type: "element",
+            name: "element",
+          ),
+          $config
+        ),
+        " .alias"
+      );
+      @include assert-equal(
+        selectorFuncs.create-level-selector(
+          (
+            type: "xxx",
+            name: "xxx",
+          ),
+          $config
+        ),
+        "alias"
+      );
+    }
+  }
+}

@@ -221,20 +221,6 @@ $EMIT_CONTENT_ONLY_ALL: "all";
   @return get-config-value("elementDelimeter", $config);
 }
 
-/// Returns the "alias" from the config of the current controller
-
-@function get-alias($config: null) {
-  @return get-config-value("alias", $config);
-}
-
-/// Returns a value from the "alias" object of the config of the current controller
-
-@function get-alias-value($entityName, $config: null) {
-  $alias: get-alias($config);
-
-  @return helpers.get-map-value-if-map($alias, $entityName);
-}
-
 /// Returns the "createBlockSelector" from the config of the current controller
 
 @function get-block-selector-creator($config: null) {
@@ -251,6 +237,25 @@ $EMIT_CONTENT_ONLY_ALL: "all";
 
 @function get-element-selector-creator($config: null) {
   @return get-config-value("createElementSelector", $config);
+}
+
+/// Returns The "selectorMiddleware" from the config of the current controller
+
+@function get-selector-middleware($config: null) {
+  @return get-config-value("selectorMiddleware", $config);
+}
+
+/// Returns The "info" from the config of the current controller
+
+@function get-info($config: null) {
+  @return get-config-value("info", $config);
+}
+
+/// Returns The a value from the "info" or null
+
+@function get-info-value($name, $config: null) {
+  $info: get-info($config);
+  @return helpers.get-map-value-if-map($info, $name);
 }
 
 /// Returns true if the given name matches the BASE_CONTENT_NAME ("base")

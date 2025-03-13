@@ -1,0 +1,56 @@
+@use "sass:map";
+@use "./globals.scss" as globals;
+@use "./level-utils.scss" as levelUtils;
+@use "./helpers.scss" as helpers;
+
+/// Migration tools for 0.9 -> 1.0
+
+@function get-alias-from-info($name, $config: null) {
+  $aliasFromInfo: globals.get-info-value("alias", $config);
+
+  @if not helpers.is-value-map($aliasFromInfo) {
+    @return null;
+  }
+
+  @return map.get($aliasFromInfo, $name);
+}
+
+@function get-alias-from-config($name, $config: null) {
+  $aliasMap: globals.get-config-value("alias", $config);
+
+  @return helpers.get-map-value-if-map($aliasMap, $name);
+}
+
+/// Copied from selector-funcs
+
+@function alias-to-selector($level, $alias) {
+  $type: levelUtils.get-level-type($level);
+  $prefix: "";
+
+  @if levelUtils.is-block-type($type) {
+    $prefix: ".";
+  }
+
+  @if levelUtils.is-modifier-type($type) {
+    $prefix: ".";
+  }
+
+  @if levelUtils.is-element-type($type) {
+    $prefix: " .";
+  }
+
+  @return "#{$prefix}#{$alias}";
+}
+
+/// Get alias from config.info (new style) or config.alias (old style)
+
+@function alias-migration-middleware($level, $config, $pipe) {
+  $name: levelUtils.get-level-name($level);
+  @if helpers.can-value-be-falsy($name) {
+    @return $pipe;
+  }
+
+  $alias: get-alias-from-info($name, $config) or get-alias-from-config($name, $config);
+
+  @return if($alias, alias-to-selector($level, $alias), $pipe);
+}

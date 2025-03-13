@@ -1,16 +1,19 @@
 @use "sass-true" as *;
+@use "sass:meta";
 @use "../index" as *;
 @use "../globals" as globals;
+@use "../migration" as migration;
 
-@mixin testSCSS($elements: true, $modifiers: true, $extras: true, $alias: $alias) {
+@mixin testSCSS($elements: true, $modifiers: true, $extras: true, $alias: $alias, $selectorMiddleware: null) {
   @include multi-sass(
     $modifiers: true,
     $extras: true,
     $elements: true,
     $block: "myBlock",
-    $alias: $alias,
     $config: (
       "blockPrefix": "",
+      "selectorMiddleware": $selectorMiddleware,
+      "alias": $alias,
     )
   ) {
     @include block {
@@ -39,8 +42,8 @@
   }
 }
 
-@include describe("If alias is defined,") {
-  @include it("Entities are renamed") {
+@include describe("New selector middleware with migration tools") {
+  @include it("Behaves like v0.9 aliases and renames selectors") {
     @include assert {
       @include output {
         @include testSCSS(
@@ -60,7 +63,8 @@
             "dark": "really-dark",
             "element": "nice-element",
             "light": "ultra-light",
-          )
+          ),
+          $selectorMiddleware: meta.get-function("alias-migration-middleware", false, "migration")
         );
       }
 

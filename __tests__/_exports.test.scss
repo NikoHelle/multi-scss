@@ -1,0 +1,143 @@
+@use "sass:map";
+@use "sass-true" as *;
+@use "../globals" as globals;
+// using index so that we can test the whole process and no need to test it separately
+@use "../index" as *;
+
+/// clear globals etc after each test;
+@function after-each() {
+  $void: globals.update-controllers([]);
+  @return false;
+}
+
+@function create-fake-controller($id) {
+  @return ("ruleMap": "fakeRuleMap-#{$id}", "levels": "fakeLevels-#{$id}", "config": "fakeConfig-#{$id}");
+}
+
+@include describe("_exports.scss forwards some functions to be used outside. Only calls are tested here") {
+  $level: (
+    "type": "element",
+    "name": "element",
+    "parent": (
+      "type": "modifier",
+      "name": "parent-modifier",
+      "parent": (
+        "type": "modifier",
+        "name": "parent-parent-modifier",
+        "parent": (
+          "type": "custom",
+          "name": "parent-parent-parent-custom",
+          "parent": (
+            "type": "extra",
+            "name": "parent-parent-parent-parent-extra",
+            "parent": (
+              "type": "block",
+              "name": "root",
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+
+  @include it("get-config-info-value() returns named item or null") {
+    $newController: globals.store-multi-sass-controller(
+      (),
+      [],
+      (
+        "info": (
+          "foo": "bar",
+        ),
+      )
+    );
+
+    @include assert-equal(get-config-info-value("foo"), "bar");
+    @include assert-equal(get-config-info-value("x"), null);
+
+    $void: after-each();
+  }
+
+  @include it("alias-middleware() returns alias") {
+    @include assert-equal(
+      alias-middleware(
+        (
+          "type": "block",
+          "name": "entity",
+        ),
+        (
+          "alias": (
+            "entity": "entity-alias",
+          ),
+        ),
+        (1, 2, 3)
+      ),
+      ".entity-alias"
+    );
+  }
+
+  @include it("find-closest-entity() finds the closest entity in parent entities") {
+    $result: find-closest-entity($level, "modifier");
+    @include assert-equal(map.get($result, "name"), "parent-modifier");
+
+    $result: find-closest-entity($level, "modifier", "parent-parent-modifier");
+    @include assert-equal(map.get($result, "name"), "parent-parent-modifier");
+  }
+
+  @include it("get-entity-parent() returns the parent entity") {
+    $result: get-entity-parent($level);
+    @include assert-equal(map.get($result, "name"), "parent-modifier");
+
+    $result: get-entity-parent($result);
+    @include assert-equal(map.get($result, "name"), "parent-parent-modifier");
+  }
+
+  @include it("get-entity-name() returns the name of the entity") {
+    @include assert-equal(get-entity-name($level), "element");
+  }
+  @include it("replace-selector-list() replaces a list item and returns new list") {
+    $list: 1 2 3;
+    @include assert-equal(replace-selector-list($list, 2, "a"), 1 "a" 3);
+    @include assert-equal($list, 1 2 3);
+  }
+  @include it("get-selector-by-index() gets item at given index") {
+    $list: 1 2 3;
+    @include assert-equal(get-selector-by-index($list, 1), 1);
+    @include assert-equal(get-selector-by-index($list, 2), 2);
+    @include assert-equal(get-selector-by-index($list, 3), 3);
+  }
+
+  @include it("is-xxx-entity() returns true/false ") {
+    @include assert-equal(
+      is-block-entity(
+        (
+          "type": "block",
+        )
+      ),
+      true
+    );
+    @include assert-equal(
+      is-modifier-entity(
+        (
+          "type": "modifier",
+        )
+      ),
+      true
+    );
+    @include assert-equal(
+      is-element-entity(
+        (
+          "type": "element",
+        )
+      ),
+      true
+    );
+    @include assert-equal(
+      is-custom-entity(
+        (
+          "type": "custom",
+        )
+      ),
+      true
+    );
+  }
+}

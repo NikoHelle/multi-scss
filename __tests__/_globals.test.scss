@@ -210,12 +210,12 @@
       "blockPrefix": "blockPrefix",
       "modifierDelimeter": "modifierDelimeter",
       "elementDelimeter": "elementDelimeter",
-      "alias": (
-        "value": 1,
-      ),
       "emitContentOnly": "emitContentOnly",
       "createModifierSelector": "createModifierSelector",
       "createElementSelector": "createElementSelector",
+      "info": (
+        "bar": "foo",
+      ),
     );
 
     $newController: globals.store-multi-sass-controller($ruleMap, $levels, $config);
@@ -228,12 +228,12 @@
       "blockPrefix": "blockPrefixTest",
       "modifierDelimeter": "modifierDelimeterTest",
       "elementDelimeter": "elementDelimeterTest",
-      "alias": (
-        "value": 2,
-      ),
       "emitContentOnly": "emitContentOnlyTest",
       "createModifierSelector": "createModifierSelectorTest",
       "createElementSelector": "createElementSelectorTest",
+      "info": (
+        "foo": "bar",
+      ),
     );
 
     @include assert-equal(globals.get-block-prefix(), map.get($config, "blockPrefix"));
@@ -248,11 +248,11 @@
     @include assert-equal(globals.get-element-delimeter(), map.get($config, "elementDelimeter"));
     @include assert-equal(globals.get-element-delimeter($argsConfig), map.get($argsConfig, "elementDelimeter"));
 
-    @include assert-equal(globals.get-alias(), map.get($config, "alias"));
-    @include assert-equal(globals.get-alias($argsConfig), map.get($argsConfig, "alias"));
+    @include assert-equal(globals.get-info(), map.get($config, "info"));
+    @include assert-equal(globals.get-info($argsConfig), map.get($argsConfig, "info"));
 
-    @include assert-equal(globals.get-alias-value("value"), 1);
-    @include assert-equal(globals.get-alias-value("value", $argsConfig), 2);
+    @include assert-equal(globals.get-info-value("bar"), "foo");
+    @include assert-equal(globals.get-info-value("foo", $argsConfig), "bar");
 
     @include assert-equal(globals.get-modifier-selector-creator(), map.get($config, "createModifierSelector"));
     @include assert-equal(

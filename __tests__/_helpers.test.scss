@@ -327,4 +327,32 @@
     @include assert-equal(helpers.is-value-true([]), false);
     @include assert-equal(helpers.is-value-true(notquoted), false);
   }
+
+  @include it("nullify-value-if-falsy() returns given value if it is not falsy, otherwise null") {
+    @include assert-equal(helpers.nullify-value-if-falsy(1), 1);
+    @include assert-equal(helpers.nullify-value-if-falsy(" "), " ");
+    @include assert-equal(helpers.nullify-value-if-falsy(()), ());
+    @include assert-equal(helpers.nullify-value-if-falsy([]), []);
+    @include assert-equal(helpers.nullify-value-if-falsy(true), true);
+    @include assert-equal(helpers.nullify-value-if-falsy(notquoted), notquoted);
+
+    /// non-truthy:
+    @include assert-equal(helpers.nullify-value-if-falsy(false), null);
+    @include assert-equal(helpers.nullify-value-if-falsy(""), null);
+    @include assert-equal(helpers.nullify-value-if-falsy(null), null);
+    @include assert-equal(helpers.nullify-value-if-falsy(0), null);
+  }
+  @include it("list-to-string() converts a list to a string ignoring falsy values, lists and maps") {
+    @include assert-equal(helpers.list-to-string((1, 2, 3)), "123");
+    @include assert-equal(helpers.list-to-string(("value1", false, "value2")), "value1value2");
+    @include assert-equal(helpers.list-to-string((null, false, "value")), "value");
+    @include assert-equal(helpers.list-to-string(((), helpers.create-empty-map(), "value")), "value");
+    @include assert-equal(helpers.list-to-string((null, false, "", "value", 0, "0")), "value0");
+  }
+  @include it("list-to-string() returns an empty if argument is not list.") {
+    @include assert-equal(helpers.list-to-string(null), "");
+    @include assert-equal(helpers.list-to-string("null"), "");
+    @include assert-equal(helpers.list-to-string(1), "");
+    @include assert-equal(helpers.list-to-string(helpers.create-empty-map()), "");
+  }
 }
