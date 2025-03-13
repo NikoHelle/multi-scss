@@ -6,6 +6,7 @@
 @use "../helpers" as helpers;
 @use "../level-utils" as levelUtils;
 @use "../selector-funcs" as selectorFuncs;
+@use "../migration" as migration;
 
 @function selector-middleware($level, $config, $pipe) {
   @if not levelUtils.is-block-level($level) {
@@ -254,6 +255,7 @@
           "block": "alias",
           "xxx": "alias",
         ),
+        "selectorMiddleware": meta.get-function("alias-migration-middleware", false, "migration"),
       );
       @include assert-equal(
         selectorFuncs.create-level-selector(

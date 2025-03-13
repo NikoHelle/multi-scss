@@ -1,8 +1,10 @@
 @use "sass-true" as *;
+@use "sass:meta";
 @use "../index" as *;
 @use "../globals" as globals;
+@use "../migration" as migration;
 
-@mixin testSCSS($elements: true, $modifiers: true, $extras: true, $alias: $alias) {
+@mixin testSCSS($elements: true, $modifiers: true, $extras: true, $alias: $alias, $selectorMiddleware: null) {
   @include multi-sass(
     $modifiers: true,
     $extras: true,
@@ -11,6 +13,7 @@
     $alias: $alias,
     $config: (
       "blockPrefix": "",
+      "selectorMiddleware": $selectorMiddleware,
     )
   ) {
     @include block {
@@ -60,7 +63,8 @@
             "dark": "really-dark",
             "element": "nice-element",
             "light": "ultra-light",
-          )
+          ),
+          $selectorMiddleware: meta.get-function("alias-migration-middleware", false, "migration")
         );
       }
 
