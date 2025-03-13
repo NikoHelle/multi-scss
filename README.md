@@ -12,7 +12,7 @@ The BEM methodology has three entities: `blocks`, `modifiers` and `elements` whi
 
 ## Dependencies
 
-There are no dependencies.
+The [https://github.com/sass/dart-sass](sass) is required.
 
 ## Testing
 
@@ -153,7 +153,7 @@ The result:
 
 The block's CSS can be discarded by wrapping it with [base content](#important-content-named-base).
 
-See also selector renaming with [alias](#renaming-entities-with-alias).
+See also selector renaming with [selector middleware](#selector-middleware).
 
 ## Arguments and configuration
 
@@ -252,7 +252,7 @@ The `config` is a map and has the following properties and values.
 - `blockPrefix` optional prefix for all blocks. Outputted selector is "." + blockPrefix + blockName. No default.
 - `modifierDelimeter` delimeter between the parent selector and modifier selector. The outputted selector is parent selector + modifierDelimeter + modifier name. Default is `"--"`.
 - `elementDelimeter` delimeter between the parent selector and element selector. The outputted selector is parent selector + elementDelimeter + element name. Default is `"__"`.
-- `alias` map of string/string pairs to override entity selectors. Detailed information in the [alias section](#renaming-entities-with-alias).
+- `info` can be used for storing any data. Useful with [selector middleware](sSelector-middleware) and [renaming selectors with functions](#how-to-pass-information-to-the-middleware).
 - `emitContentOnly`. Detailed information [below](#emitContentOnly).
 
 #### $config.emitContentOnly
@@ -443,13 +443,88 @@ Instead of writing base, a [constant can be used](#constants) or the [if-content
 
 There are many [helper mixins](#helper-mixins-and-functions) for automatic selector linking, repetition and even creating selectors with custom functions.
 
-## Renaming entities with alias
+## Other exported functions
 
-The `$config.alias` is for renaming selectors in the CSS output. The argument is a map in a format of `("entity-name-to-rename":"new-name")`. Names are not entity specific, but entities rarely have same names.
+### get-entity-name($entity)
+
+Returns the name of the entity.
+
+### is-block-entity($entity)
+
+Returns true if given entity is a block.
+
+### is-modifier-entity($entity)
+
+Returns true if given entity is a modifier.
+
+### is-element-entity($entity)
+
+Returns true if given entity is an element.
+
+### is-custom-entity($entity)
+
+Returns true if given entity is a custom.
+
+### get-entity-parent($entity)
+
+Returns the parent of an entity or null if the entity is the root.
+
+### find-closest-entity($startEntity, $type, $name:null)
+
+Finds the closest entity in parent entities with given type and name. Name is optional. If name is not give, olnly types are compared.
+
+### get-config-info-value($name)
+
+Returns the named value from `config.info` or null if the `config.info[name]` does not exist.
+
+### alias-middleware($entity, $config, $selectorList)
+
+See [selector middleware](#selector-middleware).
+
+### replace-selector-list($selectorList, $index, $new-item)
+
+Replaces an item in the selector list passed to the `alias-middleware`.Returns new list. Note that in sass, indexes start from 1.
+
+See [selector middleware](#selector-middleware).
+
+### get-selector-by-index
+
+Returns an item from the selector list passed to the `alias-middleware`. Note that in sass, indexes start from 1.
+
+See [selector middleware](#selector-middleware).
+
+## Selector middleware
+
+The `$config.selectorMiddleware` is for customising selectors in the CSS output. The value is a function with the call signature: `func($entity, $config, $selectorList)` where:
+
+- `$entity` is the currently processed entity the selector is created for. The entity has `type`, `name`, `parent`, `selector`, and other props for internal use.
+- `$config` contains configuration props passed to the `multi-sass` function. It is a combination of passed and default props. Note that each nested `multi-sass` process has its own configuration.
+- `$selectorList` list of strings that will form the selector. The list is usually (prefix or delimeter, entity name). For example, with modifiers, it is `"--", "modifier name"`. It is easier to parse and replace a list than a string. You can replace all delimeters by replacing the first item in the list. See [replace-selector-list](#replace-selector-list).
+
+The middleware is called everytime an entity is created and a selector for it. If the entity is content only or is disallowed in the rules, the selector is not created.
+
+The middleware function can return a list or string. A list is converted to a string with all falsy values discarded. The `$selectorList` should be returned if there is no need to modify the selector.
 
 ```css
+@use "@nikohelle/multi-sass/index" as multisass;
+
+@function my-rename-middleware($entity, $config, $selectorList) {
+  $type: multisass.get-entity-type($level);
+  $name: multisass.get-entity-name($level);
+  @if multisass.is-block-entity($entity) {
+    @return "#id.class";
+  }
+  @if multisass.is-modifier-type($type) {
+    @return ".cool-#{$name}";
+  }
+  @if multisass.is-element-type($type) {
+    @return " .element-#{$name}";
+  }
+  @return $selectorList;
+}
+
 @mixin my-button-component($args...) {
-  @include multi-sass($block: "my-button", $args...) {
+  @include multisass.multi-sass($block: "my-button", $args...) {
     @include modifier("mod1") {
       // CSS for the modifier
       @include element("elem1") {
@@ -468,26 +543,45 @@ The `$config.alias` is for renaming selectors in the CSS output. The argument is
   // CSS for the element
 }
 
-// with alias
+// add selector middleware
 
 @include my-button-component(
-  $config:(
-    alias:(
-      'mod1': 'cool-mod',
-      'elem1': 'nice-element',
-));
+  $config: (
+    selectorMiddleware: meta.get-function("my-rename-middleware"),
+  )
+);
 
 // output
 
-.my-button--cool-mod {
+.#id.class.cool-mod1 {
   // CSS for the modifier
 }
-.my-button--cool-mod__nice-element {
+.#id.class.cool-mod1 .element-elem1 {
   // CSS for the element
 }
 ```
 
-**Note that delimeters ("\_\_" or "--") are not appended to aliases. The given value is used as it is.**
+### How to pass information to the middleware
+
+If a `multi-sass` component is used in multiple places and the middleware should make changes only in some instances, how to know? The [config.info](#config.info) can contain any data needed for middleware. The `info` can be fetched from `multi-sass` with [get-config-info](#get-config-info). It returns whatever was passed to `multi-sass` or `null`.
+
+### Automatic renaming with config.info.alias and migration middleware
+
+The previous version (0.9) of the `multi-sass` had automatic selector renaming with the `$alias` property. The property was a map of `entity-name:new-selector` and if an entity's name was found, the selector was used. The same process can be used with [config.info](#config.info) and selector middleware. The `alias` can be placed in the `config.info` and use the exported migration function:
+
+```css
+@use "@nikohelle/multi-sass/" as multisass;
+
+$config: (
+  info: (
+    alias: (
+      entityName: ".new-selector",
+      entityX: "#id-block"
+    )
+  )
+  selectorMiddleware: meta.get-function("alias-middleware", false, "multisass")
+);
+```
 
 # Rules
 
@@ -834,7 +928,7 @@ There are some constants used in `multi-sass` and those are also exported and ca
 The files can be imported with
 
 ```css
-@use "multi-sass/globals" as globals;
+@use "@nikohelle/multi-sass/globals" as globals;
 ```
 
 - for `emitContentOnly` use `globals.$EMIT_CONTENT_ONLY_IN_ROOT` or `globals.$EMIT_CONTENT_ONLY_ALL`
