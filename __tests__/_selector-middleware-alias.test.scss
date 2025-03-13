@@ -10,10 +10,10 @@
     $extras: true,
     $elements: true,
     $block: "myBlock",
-    $alias: $alias,
     $config: (
       "blockPrefix": "",
       "selectorMiddleware": $selectorMiddleware,
+      "alias": $alias,
     )
   ) {
     @include block {
@@ -42,8 +42,8 @@
   }
 }
 
-@include describe("If alias is defined,") {
-  @include it("Entities are renamed") {
+@include describe("New selector middleware with migration tools") {
+  @include it("Behaves like v0.9 aliases and renames selectors") {
     @include assert {
       @include output {
         @include testSCSS(

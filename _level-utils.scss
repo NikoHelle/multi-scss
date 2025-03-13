@@ -145,14 +145,6 @@ $EMIT_TARGET_ROOT: "EMIT_TARGET_ROOT";
   @return map.get($level, "type");
 }
 
-@function get-level-alias($level, $config: null) {
-  $ruleMap: globals.get-multi-sass-rules();
-  $type: get-level-type($level);
-  $name: get-level-name($level);
-
-  @return globals.get-alias-value($name, $config);
-}
-
 @function get-level-name($level) {
   @return map.get($level, "name");
 }

@@ -43,25 +43,6 @@
   @return $current;
 }
 
-@function alias-to-selector($level, $alias) {
-  $type: levelUtils.get-level-type($level);
-  $prefix: "";
-
-  @if levelUtils.is-block-type($type) {
-    $prefix: ".";
-  }
-
-  @if levelUtils.is-modifier-type($type) {
-    $prefix: ".";
-  }
-
-  @if levelUtils.is-element-type($type) {
-    $prefix: " .";
-  }
-
-  @return "#{$prefix}#{$alias}";
-}
-
 @function selector-middleware($level, $config, $pipe) {
   @return $pipe;
 }

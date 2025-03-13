@@ -53,7 +53,6 @@
       "blockPrefix": globals.$BLOCK-PREFIX,
       "modifierDelimeter": globals.$MODIFIER-DELIMETER,
       "elementDelimeter": globals.$ELEMENT-DELIMETER,
-      "alias": null,
       "emitContentOnly": null,
       "selectorMiddleware": null,
       "customConfig": true,
@@ -112,7 +111,6 @@
       $elements: true,
       $extras: true,
       $block: "myBlock",
-      $alias: null,
       $config: (
         "blockPrefix": "block-prefix-",
       ),

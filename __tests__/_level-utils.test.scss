@@ -909,44 +909,6 @@ $config: ();
       );
     }
 
-    @include it("get-level-alias returns the alias of the level") {
-      $config: (
-        "alias": (
-          "test-block": "alias-block",
-        ),
-      );
-      @include assert-equal(
-        levelUtils.get-level-alias(
-          (
-            "type": "block",
-            "name": "test-block",
-          ),
-          $config
-        ),
-        "alias-block"
-      );
-      @include assert-equal(
-        levelUtils.get-level-alias(
-          (
-            "type": "element",
-            "name": "test-block",
-          ),
-          $config
-        ),
-        "alias-block"
-      );
-      @include assert-equal(
-        levelUtils.get-level-alias(
-          (
-            "type": "block",
-          ),
-          $config
-        ),
-        null
-      );
-      @include assert-equal(levelUtils.get-level-alias(()), null);
-    }
-
     @include it("get-level-name returns the name of the level") {
       @include assert-equal(
         levelUtils.get-level-name(

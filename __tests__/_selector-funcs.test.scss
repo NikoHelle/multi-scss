@@ -246,8 +246,8 @@
     }
   }
 
-  @include describe("selectors can be renamed with alias and create-selector-with-alias() uses them") {
-    @include it("create-selector-with-alias() creates a simple class selector for aliases") {
+  @include describe("selector middleware can be passed in config.") {
+    @include it("create-level-selector() uses the middleware for aliases") {
       $config: (
         "alias": (
           "element": "alias",

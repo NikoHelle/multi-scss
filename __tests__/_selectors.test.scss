@@ -154,13 +154,4 @@
       );
     }
   }
-
-  @include describe("selectors can be renamed with alias and create-selector-with-alias() uses them") {
-    @include it("create-selector-with-alias() creates a simple class selector for aliases") {
-      @include assert-equal(selectors.create-selector-with-alias($type: "block", $alias: "alias"), ".alias");
-      @include assert-equal(selectors.create-selector-with-alias($type: "modifier", $alias: "alias"), ".alias");
-      @include assert-equal(selectors.create-selector-with-alias($type: "element", $alias: "alias"), " .alias");
-      @include assert-equal(selectors.create-selector-with-alias($type: "xxx", $alias: "alias"), "alias");
-    }
-  }
 }

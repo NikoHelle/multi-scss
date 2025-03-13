@@ -66,28 +66,3 @@
 
   @return "";
 }
-
-/// Selector creator for an entity with alias
-
-@function create-selector-with-alias($type, $alias) {
-  $prefix: "";
-
-  @if $type == "custom" {
-    @error "Custom entities cannot have an alias";
-    @return "";
-  }
-
-  @if $type == "block" {
-    $prefix: ".";
-  }
-
-  @if $type == "modifier" {
-    $prefix: ".";
-  }
-
-  @if $type == "element" {
-    $prefix: " .";
-  }
-
-  @return "#{$prefix}#{$alias}";
-}

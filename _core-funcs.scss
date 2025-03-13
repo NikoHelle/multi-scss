@@ -8,7 +8,6 @@
 @use "./output.scss" as output;
 
 /// @params Named args:
-///  - $alias
 ///  - $block
 ///  - $config
 ///  - $elements
@@ -22,14 +21,12 @@
   $levels: [];
   $blockName: map.get($argMap, "block");
   $configInArgs: map.get($argMap, "config") or helpers.create-empty-map();
-  $aliasInArgs: map.get($argMap, "alias") or null;
   $config: map.merge(
     (
       "blockName": $blockName,
       "blockPrefix": globals.$BLOCK-PREFIX,
       "modifierDelimeter": globals.$MODIFIER-DELIMETER,
       "elementDelimeter": globals.$ELEMENT-DELIMETER,
-      "alias": $aliasInArgs,
       "emitContentOnly": null,
       "selectorMiddleware": null,
     ),
