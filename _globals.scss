@@ -259,6 +259,19 @@ $EMIT_CONTENT_ONLY_ALL: "all";
   @return get-config-value("selectorMiddleware", $config);
 }
 
+/// Returns The "info" from the config of the current controller
+
+@function get-info($config: null) {
+  @return get-config-value("info", $config);
+}
+
+/// Returns The a value from the "info" or null
+
+@function get-info-value($name, $config: null) {
+  $info: get-info($config);
+  @return helpers.get-map-value-if-map($info, $name);
+}
+
 /// Returns true if the given name matches the BASE_CONTENT_NAME ("base")
 
 @function is-base-name($name) {
